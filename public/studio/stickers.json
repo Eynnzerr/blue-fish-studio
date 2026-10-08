@@ -1,0 +1,186 @@
+[
+  {
+    "id": "studio-design-cheer",
+    "name": "给你打气",
+    "src": "studio/designs/cheer.png",
+    "preview": "studio/designs/cheer.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "新绘",
+      "加油",
+      "应援",
+      "开心"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceNote": "新绘底图",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "processing": "character-reference-illustration"
+  },
+  {
+    "id": "studio-design-bright-idea",
+    "name": "灵感来了",
+    "src": "studio/designs/bright-idea.png",
+    "preview": "studio/designs/bright-idea.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "新绘",
+      "灵感",
+      "思考",
+      "惊喜"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceNote": "新绘底图",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "processing": "character-reference-illustration"
+  },
+  {
+    "id": "studio-design-whale-skate",
+    "name": "下班开溜",
+    "src": "studio/designs/whale-skate.png",
+    "preview": "studio/designs/whale-skate.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "新绘",
+      "下班",
+      "开溜",
+      "滑板"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceNote": "新绘底图",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "processing": "character-reference-illustration"
+  },
+  {
+    "id": "studio-design-whale-sleeping-bag",
+    "name": "今天先躺平",
+    "src": "studio/designs/whale-sleeping-bag.png",
+    "preview": "studio/designs/whale-sleeping-bag.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "新绘",
+      "躺平",
+      "休息",
+      "困困"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceNote": "新绘底图",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "processing": "character-reference-illustration"
+  },
+  {
+    "id": "studio-cutout-watermelon",
+    "name": "吃瓜时间 · 透明",
+    "src": "studio/cutouts/watermelon.png",
+    "preview": "studio/cutouts/watermelon.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "吃瓜时间"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceId": "89128212ab62c6eb4e03a95568bf9827.png",
+    "sourceNote": "原图衍生 · 透明底",
+    "processing": "background-extraction"
+  },
+  {
+    "id": "studio-cutout-whale-nap",
+    "name": "鲸鱼窝里睡觉 · 透明",
+    "src": "studio/cutouts/whale-nap.png",
+    "preview": "studio/cutouts/whale-nap.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "鲸鱼窝里睡觉"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1290,
+    "height": 1219,
+    "origin": "studio",
+    "sourceId": "f403ac42d0b8c2d0d771745f3d9c6163_0.png",
+    "sourceNote": "原图衍生 · 透明底",
+    "processing": "background-extraction"
+  },
+  {
+    "id": "studio-cutout-grumpy",
+    "name": "气鼓鼓 · 透明",
+    "src": "studio/cutouts/grumpy.png",
+    "preview": "studio/cutouts/grumpy.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "气鼓鼓"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceId": "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png",
+    "sourceNote": "原图衍生 · 透明底",
+    "processing": "background-extraction"
+  },
+  {
+    "id": "studio-cutout-rice-time",
+    "name": "开心干饭 · 透明",
+    "src": "studio/cutouts/rice-time.png",
+    "preview": "studio/cutouts/rice-time.png",
+    "tags": [
+      "透明底",
+      "工坊补充",
+      "开心干饭"
+    ],
+    "featured": true,
+    "selfMade": false,
+    "animated": false,
+    "width": 1254,
+    "height": 1254,
+    "origin": "studio",
+    "sourceId": "ce08b4d81dbd0858a3e364ae068fadaf.jpg",
+    "sourceNote": "原图衍生 · 透明底",
+    "processing": "background-extraction"
+  }
+]

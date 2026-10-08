@@ -1,0 +1,66 @@
+[
+  {
+    "slug": "cheer",
+    "name": "给你打气",
+    "tags": [
+      "加油",
+      "应援",
+      "开心"
+    ],
+    "scene": "A buoyant cheering pose: full-body chibi character jumping with one foot lifted and both arms up, holding one short blue-and-white glow stick in each hand. Joyful crescent eyes, huge happy smile with a tiny fang, hair and whale tail bouncing. Tiny blue sparkle accents only. Clear silhouette; visually different from drumming or waving.",
+    "method": "imagegen/illustration-story",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "prompt": "Use case: illustration-story. Asset type: a NEW transparent sticker base for a DeepSeek whale-girl meme maker.\nInput images 1 and 2 are CHARACTER IDENTITY AND ART STYLE REFERENCES ONLY, not compositions to copy. Design the completely new pose described below.\nCharacter invariants: exactly one adorable chibi whale-girl, long rich cobalt/navy hair with cyan tips and a curved single ahoge, huge expressive blue eyes where open, small fin-shaped whale ears with pale inner edges, white ruffled maid headband, a small cyan hair bow on her left side/viewer-right, navy-and-white frilled maid outfit with restrained gold accents, dark chest bow and bright blue gem, a small navy whale emblem on the white apron, blue whale tail when visible. Keep the recognizable reference face, vivid clean anime shading and crisp dark contours. The character is cute and fully clothed.\nNew composition: A buoyant cheering pose: full-body chibi character jumping with one foot lifted and both arms up, holding one short blue-and-white glow stick in each hand. Joyful crescent eyes, huge happy smile with a tiny fang, hair and whale tail bouncing. Tiny blue sparkle accents only. Clear silhouette; visually different from drumming or waving.\nSquare composition, subject centered and fully visible with generous 10% transparent margin on every side. True alpha-transparent background. Clean edges; preserve white clothing as opaque. Bold readable silhouette suitable for use at 256px. Detailed enough to match the reference but not visually crowded. No letters, numbers, captions, watermark, signature or gibberish. No speech bubble with text, no fake checkerboard, no opaque background, no drop shadow, no white sticker border. Do not crop hair, ears, props, hands, feet or tail."
+  },
+  {
+    "slug": "bright-idea",
+    "name": "灵感来了",
+    "tags": [
+      "灵感",
+      "思考",
+      "惊喜"
+    ],
+    "scene": "A new upper-body composition: the character leans slightly forward, cupping a single small warm golden light bulb in both open palms at chest height as if proudly showing a new idea. Sparkling wide blue eyes and an excited little open smile. The bulb is small relative to her head, simple outlined glass, not a giant prop. A few short golden light rays; all marks are pictorial, no words.",
+    "method": "imagegen/illustration-story",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "prompt": "Use case: illustration-story. Asset type: a NEW transparent sticker base for a DeepSeek whale-girl meme maker.\nInput images 1 and 2 are CHARACTER IDENTITY AND ART STYLE REFERENCES ONLY, not compositions to copy. Design the completely new pose described below.\nCharacter invariants: exactly one adorable chibi whale-girl, long rich cobalt/navy hair with cyan tips and a curved single ahoge, huge expressive blue eyes where open, small fin-shaped whale ears with pale inner edges, white ruffled maid headband, a small cyan hair bow on her left side/viewer-right, navy-and-white frilled maid outfit with restrained gold accents, dark chest bow and bright blue gem, a small navy whale emblem on the white apron, blue whale tail when visible. Keep the recognizable reference face, vivid clean anime shading and crisp dark contours. The character is cute and fully clothed.\nNew composition: A new upper-body composition: the character leans slightly forward, cupping a single small warm golden light bulb in both open palms at chest height as if proudly showing a new idea. Sparkling wide blue eyes and an excited little open smile. The bulb is small relative to her head, simple outlined glass, not a giant prop. A few short golden light rays; all marks are pictorial, no words.\nSquare composition, subject centered and fully visible with generous 10% transparent margin on every side. True alpha-transparent background. Clean edges; preserve white clothing as opaque. Bold readable silhouette suitable for use at 256px. Detailed enough to match the reference but not visually crowded. No letters, numbers, captions, watermark, signature or gibberish. No speech bubble with text, no fake checkerboard, no opaque background, no drop shadow, no white sticker border. Do not crop hair, ears, props, hands, feet or tail."
+  },
+  {
+    "slug": "whale-skate",
+    "name": "下班开溜",
+    "tags": [
+      "下班",
+      "开溜",
+      "滑板"
+    ],
+    "scene": "A new dynamic full-body scene in three-quarter side view: the chibi character stands on a compact blue whale-shaped skateboard with FOUR SMALL WHEELS, one hand waving back toward the viewer and the other holding the strap of a small pale-blue crossbody satchel. Playful confident smile, head turned back to us, flowing hair and dress, knees slightly bent. Make it unmistakably a skateboard and NOT a flying whale mount; no ground plane. Tiny motion swooshes may accompany the wheels.",
+    "method": "imagegen/illustration-story",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "prompt": "Use case: illustration-story. Asset type: a NEW transparent sticker base for a DeepSeek whale-girl meme maker.\nInput images 1 and 2 are CHARACTER IDENTITY AND ART STYLE REFERENCES ONLY, not compositions to copy. Design the completely new pose described below.\nCharacter invariants: exactly one adorable chibi whale-girl, long rich cobalt/navy hair with cyan tips and a curved single ahoge, huge expressive blue eyes where open, small fin-shaped whale ears with pale inner edges, white ruffled maid headband, a small cyan hair bow on her left side/viewer-right, navy-and-white frilled maid outfit with restrained gold accents, dark chest bow and bright blue gem, a small navy whale emblem on the white apron, blue whale tail when visible. Keep the recognizable reference face, vivid clean anime shading and crisp dark contours. The character is cute and fully clothed.\nNew composition: A new dynamic full-body scene in three-quarter side view: the chibi character stands on a compact blue whale-shaped skateboard with FOUR SMALL WHEELS, one hand waving back toward the viewer and the other holding the strap of a small pale-blue crossbody satchel. Playful confident smile, head turned back to us, flowing hair and dress, knees slightly bent. Make it unmistakably a skateboard and NOT a flying whale mount; no ground plane. Tiny motion swooshes may accompany the wheels.\nSquare composition, subject centered and fully visible with generous 10% transparent margin on every side. True alpha-transparent background. Clean edges; preserve white clothing as opaque. Bold readable silhouette suitable for use at 256px. Detailed enough to match the reference but not visually crowded. No letters, numbers, captions, watermark, signature or gibberish. No speech bubble with text, no fake checkerboard, no opaque background, no drop shadow, no white sticker border. Do not crop hair, ears, props, hands, feet or tail."
+  },
+  {
+    "slug": "whale-sleeping-bag",
+    "name": "今天先躺平",
+    "tags": [
+      "躺平",
+      "休息",
+      "困困"
+    ],
+    "scene": "A new lounging full-body composition arranged diagonally across the square: the character is zipped snugly inside a LONG plush blue-and-white WHALE-SHAPED SLEEPING BAG ending in two clearly visible whale tail flukes. Only her sleepy smiling face, blue hair, white maid headband and TWO tiny hands peek from the head opening. Long rounded sleeping-bag silhouette, not a bowl or cup. Closed relaxed eyes, peaceful blush, tiny blue bubble decoration. No pillow, bed, floor or room.",
+    "method": "imagegen/illustration-story",
+    "referenceIds": [
+      "c0b02b5d709e92585afa2d6167f411e6.png",
+      "d9b03a02-385e-4fbc-80db-8fd48a03abdb.png"
+    ],
+    "prompt": "Use case: illustration-story. Asset type: a NEW transparent sticker base for a DeepSeek whale-girl meme maker.\nInput images 1 and 2 are CHARACTER IDENTITY AND ART STYLE REFERENCES ONLY, not compositions to copy. Design the completely new pose described below.\nCharacter invariants: exactly one adorable chibi whale-girl, long rich cobalt/navy hair with cyan tips and a curved single ahoge, huge expressive blue eyes where open, small fin-shaped whale ears with pale inner edges, white ruffled maid headband, a small cyan hair bow on her left side/viewer-right, navy-and-white frilled maid outfit with restrained gold accents, dark chest bow and bright blue gem, a small navy whale emblem on the white apron, blue whale tail when visible. Keep the recognizable reference face, vivid clean anime shading and crisp dark contours. The character is cute and fully clothed.\nNew composition: A new lounging full-body composition arranged diagonally across the square: the character is zipped snugly inside a LONG plush blue-and-white WHALE-SHAPED SLEEPING BAG ending in two clearly visible whale tail flukes. Only her sleepy smiling face, blue hair, white maid headband and TWO tiny hands peek from the head opening. Long rounded sleeping-bag silhouette, not a bowl or cup. Closed relaxed eyes, peaceful blush, tiny blue bubble decoration. No pillow, bed, floor or room.\nSquare composition, subject centered and fully visible with generous 10% transparent margin on every side. True alpha-transparent background. Clean edges; preserve white clothing as opaque. Bold readable silhouette suitable for use at 256px. Detailed enough to match the reference but not visually crowded. No letters, numbers, captions, watermark, signature or gibberish. No speech bubble with text, no fake checkerboard, no opaque background, no drop shadow, no white sticker border. Do not crop hair, ears, props, hands, feet or tail."
+  }
+]
