@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -18,6 +19,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v6
+        with:
+          # Build the latest main after acquiring the Pages lock, including any newer pushes.
+          ref: main
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:

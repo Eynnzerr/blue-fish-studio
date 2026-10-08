@@ -1,5 +1,14 @@
-import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import {
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
+import { dirname, extname, isAbsolute, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /** Absolute project directory, independent of the caller's working directory. */
@@ -10,6 +19,15 @@ const sourceRoot = process.argv[2]
   : resolve(projectRoot, "../blue-fish-archive");
 /** Public directory containing the self-contained image library. */
 const publicRoot = resolve(projectRoot, "public");
+/** Raster formats supported by the upstream archive; active document formats are excluded. */
+const allowedImageExtensions = new Set([
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".webp",
+  ".gif",
+  ".apng",
+]);
 
 /** Curated images in gallery order; the waving portrait is the initial canvas. */
 const featuredImages = [
@@ -69,27 +87,74 @@ const featuredByFilename = new Map(
   ]),
 );
 
-/** Copy an archive asset while preserving its original subdirectory and bytes. */
-async function copyArchiveAsset(relativePath) {
-  const destination = resolve(publicRoot, "archive", relativePath);
+/** Copy one image only when its manifest path and resolved source stay in the allowed directory. */
+async function copyArchiveAsset(
+  relativePath,
+  directory,
+  resolvedSourceRoot,
+  stagingRoot,
+) {
+  if (
+    typeof relativePath !== "string" ||
+    isAbsolute(relativePath) ||
+    !relativePath.startsWith(`${directory}/`) ||
+    relativePath.includes("\\") ||
+    relativePath.split("/").includes("..") ||
+    !allowedImageExtensions.has(extname(relativePath).toLowerCase())
+  ) {
+    throw new Error(`Invalid ${directory} asset path: ${relativePath}`);
+  }
+
+  /** Canonical image path, including the targets of any source symlinks. */
+  const source = await realpath(resolve(resolvedSourceRoot, relativePath));
+  /** Expected source boundary; a directory symlink cannot redirect this outside the checkout. */
+  const sourceDirectory = resolve(resolvedSourceRoot, directory);
+  if (!source.startsWith(`${sourceDirectory}${sep}`)) {
+    throw new Error(`Asset escapes ${directory}: ${relativePath}`);
+  }
+
+  /** Destination inside the fresh staging directory, using the validated manifest path. */
+  const destination = resolve(stagingRoot, relativePath);
   await mkdir(dirname(destination), { recursive: true });
-  await copyFile(resolve(sourceRoot, relativePath), destination);
+  await copyFile(source, destination);
 }
 
 /** Refresh archive images and metadata without changing the separate studio collection. */
 async function syncAssets() {
+  /** Canonical checkout root used to validate every source image. */
+  const resolvedSourceRoot = await realpath(sourceRoot);
+  /** Upstream entries in their original order. */
   const manifest = JSON.parse(
-    await readFile(resolve(sourceRoot, "stickers/manifest.json"), "utf8"),
+    await readFile(
+      resolve(resolvedSourceRoot, "stickers/manifest.json"),
+      "utf8",
+    ),
   );
-  const stickers = await Promise.all(
-    manifest.map(async (entry, index) => {
-      const editorial = featuredByFilename.get(entry.filename);
-      await Promise.all([
-        copyArchiveAsset(entry.original),
-        copyArchiveAsset(entry.preview),
-      ]);
 
-      return {
+  await mkdir(publicRoot, { recursive: true });
+  /** Temporary archive on the same filesystem as its final destination. */
+  const stagingRoot = await mkdtemp(resolve(publicRoot, ".archive-sync-"));
+  try {
+    /** Generated gallery metadata, preserving the existing labels and sort order. */
+    const stickers = [];
+    for (const [index, entry] of manifest.entries()) {
+      /** Optional curated name and tags for this original archive filename. */
+      const editorial = featuredByFilename.get(entry.filename);
+      // Sequential copies finish or fail before cleanup can remove the staging directory.
+      await copyArchiveAsset(
+        entry.original,
+        "media",
+        resolvedSourceRoot,
+        stagingRoot,
+      );
+      await copyArchiveAsset(
+        entry.preview,
+        "previews",
+        resolvedSourceRoot,
+        stagingRoot,
+      );
+
+      stickers.push({
         id: entry.filename,
         /** Gallery source; creator attribution remains in the archive metadata. */
         origin: "archive",
@@ -104,22 +169,27 @@ async function syncAssets() {
         // Archive metadata describes the thumbnail; its aspect ratio matches the original.
         width: entry.width,
         height: entry.height,
-      };
-    }),
-  );
+      });
+    }
 
-  stickers.sort(
-    (left, right) =>
-      (featuredByFilename.get(left.id)?.order ?? featuredImages.length) -
-      (featuredByFilename.get(right.id)?.order ?? featuredImages.length),
-  );
-  await writeFile(
-    resolve(publicRoot, "stickers.json"),
-    `${JSON.stringify(stickers, null, 2)}\n`,
-  );
-  console.log(
-    `Imported ${stickers.length} images and previews from ${sourceRoot}`,
-  );
+    stickers.sort(
+      (left, right) =>
+        (featuredByFilename.get(left.id)?.order ?? featuredImages.length) -
+        (featuredByFilename.get(right.id)?.order ?? featuredImages.length),
+    );
+    // Replace only after every image is present; removed upstream entries disappear with the old archive.
+    await rm(resolve(publicRoot, "archive"), { recursive: true, force: true });
+    await rename(stagingRoot, resolve(publicRoot, "archive"));
+    await writeFile(
+      resolve(publicRoot, "stickers.json"),
+      `${JSON.stringify(stickers, null, 2)}\n`,
+    );
+    console.log(
+      `Imported ${stickers.length} images and previews from ${sourceRoot}`,
+    );
+  } finally {
+    await rm(stagingRoot, { recursive: true, force: true });
+  }
 }
 
 await syncAssets();

@@ -1,0 +1,102 @@
+name: Sync archive assets
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archive-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      assets_changed: ${{ steps.commit.outputs.assets_changed }}
+    steps:
+      - name: Check upstream main
+        id: upstream
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          upstream_sha=$(gh api repos/EDMOK/blue-fish-archive/commits/main --jq .sha)
+          previous_sha=""
+          # Read the checkpoint through the API to avoid downloading the image library on every poll.
+          checkpoint_blob=$(gh api "repos/$GITHUB_REPOSITORY/contents/.github?ref=main" \
+            --jq '.[] | select(.name == "blue-fish-archive.sha") | .sha')
+          if [ -n "$checkpoint_blob" ]; then
+            previous_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/blobs/$checkpoint_blob" \
+              --jq .content | base64 --decode)
+          fi
+          echo "sha=$upstream_sha" >> "$GITHUB_OUTPUT"
+          if [ "$upstream_sha" = "$previous_sha" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Upstream main is already synchronized." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check out the latest project
+        if: steps.upstream.outputs.changed == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Check out the upstream snapshot
+        if: steps.upstream.outputs.changed == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: EDMOK/blue-fish-archive
+          ref: ${{ steps.upstream.outputs.sha }}
+          path: .archive-source
+          persist-credentials: false
+
+      - name: Set up Node.js
+        if: steps.upstream.outputs.changed == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+
+      - name: Import archive images and metadata
+        if: steps.upstream.outputs.changed == 'true'
+        run: node scripts/sync-assets.mjs "$GITHUB_WORKSPACE/.archive-source"
+
+      - name: Commit the synchronized snapshot
+        if: steps.upstream.outputs.changed == 'true'
+        id: commit
+        env:
+          UPSTREAM_SHA: ${{ steps.upstream.outputs.sha }}
+        run: |
+          git add -A -- public/archive public/stickers.json
+          if git diff --cached --quiet; then
+            echo "assets_changed=false" >> "$GITHUB_OUTPUT"
+            echo "The upstream commit contains no asset changes." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "assets_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Archive assets updated; GitHub Pages will be redeployed." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf '%s\n' "$UPSTREAM_SHA" > .github/blue-fish-archive.sha
+          git add -- .github/blue-fish-archive.sha
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: sync blue-fish-archive ${UPSTREAM_SHA:0:7}"
+          # Preserve changes pushed to main while the archive was downloading.
+          git pull --rebase origin main
+          git push origin HEAD:main
+
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.assets_changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/pages.yml
