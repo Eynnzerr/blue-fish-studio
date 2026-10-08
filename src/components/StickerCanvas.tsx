@@ -12,7 +12,7 @@ export interface StickerCanvasProps {
   onPositionChange: (x: number, y: number) => void;
   /** Exposes the displayed canvas to image export and clipboard actions. */
   canvasRef: RefObject<HTMLCanvasElement | null>;
-  /** Shows progress and suspends dragging while the source image loads. */
+  /** Shows progress and suspends dragging while the source image or font loads. */
   loading: boolean;
 }
 
@@ -40,7 +40,7 @@ export function StickerCanvas({
       cancelled = true;
       document.fonts.removeEventListener("loadingdone", redraw);
     };
-  }, [canvasRef, image, settings]);
+  }, [canvasRef, image, settings, loading]);
 
   /** Converts CSS pixels into the canvas coordinate system, including scaled previews. */
   const positionFromPointer = (event: PointerEvent<HTMLCanvasElement>) => {
@@ -97,7 +97,7 @@ export function StickerCanvas({
       </canvas>
       {loading && (
         <div className="canvas-loading" role="status">
-          正在载入底图…
+          正在载入底图或字体…
         </div>
       )}
     </div>

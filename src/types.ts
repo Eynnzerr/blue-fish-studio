@@ -68,4 +68,6 @@ export interface FontOption {
   family: string;
   /** User-visible name. */
   label: string;
+  /** Bundled font path, loaded on selection; absent for system and uploaded fonts. */
+  source?: string;
 }

@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Eye,
   Fish,
+  Github,
   Heart,
   ImagePlus,
   Info,
@@ -21,13 +22,39 @@ import Gallery from "./components/Gallery";
 import Editor from "./components/Editor";
 import GenerationDialog from "./components/GenerationDialog";
 import { StickerCanvas } from "./components/StickerCanvas";
-import { BUILTIN_FONTS, DEFAULT_SETTINGS } from "./lib/defaults";
+import {
+  BUILTIN_FONTS,
+  DEFAULT_SETTINGS,
+  SYSTEM_FONT_FAMILY,
+} from "./lib/defaults";
 import { canvasToBlob, renderSticker } from "./lib/canvas";
 import type { EditorSettings, FontOption, Sticker } from "./types";
 
 /** Resolve a bundled URL for root and subdirectory deployments alike. */
 function assetUrl(path: string) {
   return `${import.meta.env.BASE_URL}${path}`;
+}
+
+/** Share bundled font downloads across selections and repeated effect setup. */
+const builtinFontLoads = new Map<string, Promise<FontFace>>();
+
+/** Load and register one bundled face before it is used by the canvas. */
+function loadBuiltinFont(family: string, source: string): Promise<FontFace> {
+  const cached = builtinFontLoads.get(family);
+  if (cached) return cached;
+  const face = new FontFace(family, `url("${assetUrl(source)}")`);
+  const pending = face
+    .load()
+    .then((loaded) => {
+      document.fonts.add(loaded);
+      return loaded;
+    })
+    .catch((cause) => {
+      builtinFontLoads.delete(family);
+      throw cause;
+    });
+  builtinFontLoads.set(family, pending);
+  return pending;
 }
 
 /** Jump between workshop sections on a narrow screen. */
@@ -50,7 +77,8 @@ export default function App() {
     ...DEFAULT_SETTINGS,
   });
   const [fonts, setFonts] = useState<FontOption[]>(BUILTIN_FONTS);
-  const [fontReady, setFontReady] = useState(false);
+  const [readyFontFamily, setReadyFontFamily] = useState<string | null>(null);
+  const fontReady = readyFontFamily === settings.fontFamily;
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState("");
@@ -96,34 +124,30 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    const face = new FontFace(
-      "Maoken",
-      `url("${assetUrl("fonts/MaokenAssortedSans-Lite.ttf")}")`,
-    );
-    face
-      .load()
-      .then((loaded) => {
-        document.fonts.add(loaded);
-        if (active) setFontReady(true);
+    const family = settings.fontFamily;
+    const font = BUILTIN_FONTS.find((item) => item.family === family);
+    if (!font?.source) {
+      setReadyFontFamily(family);
+      return;
+    }
+    loadBuiltinFont(family, font.source)
+      .then(() => {
+        if (active) setReadyFontFamily(family);
       })
       .catch(() => {
         if (active) {
           setSettings((previous) =>
-            previous.fontFamily === "Maoken"
-              ? { ...previous, fontFamily: BUILTIN_FONTS[1].family }
+            previous.fontFamily === family
+              ? { ...previous, fontFamily: SYSTEM_FONT_FAMILY }
               : previous,
           );
-          setFonts((previous) =>
-            previous.filter((font) => font.family !== "Maoken"),
-          );
-          setFontReady(true);
-          setToast("内置字体加载失败，可使用系统字体或导入字体");
+          setToast(`${font.label}加载失败，已切换系统黑体，可稍后重新选择`);
         }
       });
     return () => {
       active = false;
     };
-  }, []);
+  }, [settings.fontFamily]);
 
   useEffect(() => {
     if (!selected) return;
@@ -182,7 +206,7 @@ export default function App() {
   /** Restore the initial typography without changing the selected artwork. */
   function resetSettings() {
     fontSelection.current += 1;
-    setSettings({ ...DEFAULT_SETTINGS, fontFamily: fonts[0].family });
+    setSettings({ ...DEFAULT_SETTINGS });
     setToast("已恢复初始排版");
   }
 
@@ -251,6 +275,7 @@ export default function App() {
     try {
       const family = `custom-${crypto.randomUUID()}`;
       const face = await new FontFace(family, await file.arrayBuffer()).load();
+      if (!mounted.current) return;
       document.fonts.add(face);
       setFonts((previous) => [
         ...previous,
@@ -260,7 +285,8 @@ export default function App() {
         setSettings((previous) => ({ ...previous, fontFamily: family }));
       setToast("字体已载入，可以开始创作了");
     } catch {
-      setToast("字体无法读取，请选择 TTF、OTF、WOFF 或 WOFF2 文件");
+      if (mounted.current)
+        setToast("字体无法读取，请选择 TTF、OTF、WOFF 或 WOFF2 文件");
     }
   }
 
@@ -327,6 +353,16 @@ export default function App() {
           <span className="brand-pill">BETA</span>
         </a>
         <nav>
+          <a
+            className="icon-button"
+            href="https://github.com/Eynnzerr/blue-fish-studio"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="查看 GitHub 仓库"
+            title="查看 GitHub 仓库"
+          >
+            <Github size={20} aria-hidden="true" />
+          </a>
           <button
             className="about-button"
             onClick={() => aboutRef.current?.showModal()}
@@ -640,7 +676,7 @@ export default function App() {
             </a>{" "}
             · Material 3
           </dd>
-          <dt>手写字体</dt>
+          <dt>内置字体</dt>
           <dd>
             <a
               href="https://github.com/maoken-fonts/MaokenAssortedSans"
@@ -648,6 +684,30 @@ export default function App() {
               rel="noreferrer"
             >
               猫啃什锦黑
+            </a>
+            、
+            <a
+              href="https://fonts.google.com/specimen/ZCOOL+KuaiLe"
+              target="_blank"
+              rel="noreferrer"
+            >
+              站酷快乐体
+            </a>
+            、
+            <a
+              href="https://fonts.google.com/specimen/ZCOOL+QingKe+HuangYou"
+              target="_blank"
+              rel="noreferrer"
+            >
+              站酷庆科黄油体
+            </a>
+            、
+            <a
+              href="https://fonts.google.com/specimen/Ma+Shan+Zheng"
+              target="_blank"
+              rel="noreferrer"
+            >
+              马善政毛笔手写
             </a>{" "}
             · SIL OFL 1.1
           </dd>

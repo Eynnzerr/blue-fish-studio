@@ -1506,6 +1506,43 @@ select option {
   }
 }
 
+/* Only the preview determines the desktop row height; sidebar content scrolls inside it. */
+@media (min-width: 1051px) {
+  .workspace {
+    align-items: stretch;
+  }
+  .gallery-panel,
+  .editor-panel {
+    contain: size;
+    min-height: 0;
+    max-height: none;
+    align-self: stretch;
+  }
+  .gallery-panel {
+    overflow: hidden;
+  }
+  .gallery-panel > :not(.gallery-grid) {
+    flex-shrink: 0;
+  }
+  .gallery-grid {
+    flex: 1 1 0;
+    align-content: start;
+  }
+  .gallery-grid:empty {
+    display: none;
+  }
+  .gallery-empty {
+    flex: 1;
+    min-height: 0;
+  }
+  .editor-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+}
+
 /* Wider canvases take priority while the sidebars retain legible control widths. */
 @media (max-width: 1320px) {
   .app-header {

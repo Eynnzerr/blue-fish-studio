@@ -1,5 +1,9 @@
 import type { EditorSettings, FontOption } from "../types";
 
+/** Available local sans-serif fallback when a bundled font cannot load. */
+export const SYSTEM_FONT_FAMILY =
+  '"PingFang SC", "Microsoft YaHei", sans-serif';
+
 /** Starting layout for the featured waving whale. */
 export const DEFAULT_SETTINGS: EditorSettings = {
   text: "今天也要开心呀",
@@ -20,8 +24,27 @@ export const DEFAULT_SETTINGS: EditorSettings = {
 
 /** Fonts that require no user upload. */
 export const BUILTIN_FONTS: FontOption[] = [
-  { family: "Maoken", label: "猫啃什锦黑" },
-  { family: '"PingFang SC", "Microsoft YaHei", sans-serif', label: "系统黑体" },
+  {
+    family: "Maoken",
+    label: "猫啃什锦黑",
+    source: "fonts/MaokenAssortedSans-Lite.ttf",
+  },
+  {
+    family: "ZCOOL KuaiLe",
+    label: "站酷快乐体",
+    source: "fonts/ZCOOLKuaiLe-Regular.ttf",
+  },
+  {
+    family: "ZCOOL QingKe HuangYou",
+    label: "站酷庆科黄油体",
+    source: "fonts/ZCOOLQingKeHuangYou-Regular.ttf",
+  },
+  {
+    family: "Ma Shan Zheng",
+    label: "马善政毛笔手写",
+    source: "fonts/MaShanZheng-Regular.ttf",
+  },
+  { family: SYSTEM_FONT_FAMILY, label: "系统黑体" },
   { family: '"Songti SC", "SimSun", serif', label: "系统宋体" },
 ];
 
