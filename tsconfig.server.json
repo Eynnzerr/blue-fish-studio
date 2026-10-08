@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "server",
+    "src/lib/render.ts",
+    "src/lib/defaults.ts",
+    "src/types.ts"
+  ]
+}

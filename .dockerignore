@@ -1,0 +1,9 @@
+.git
+.github
+node_modules
+dist
+.preview
+.env*
+*.tsbuildinfo
+docs
+artwork
