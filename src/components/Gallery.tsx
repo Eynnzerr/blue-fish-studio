@@ -148,8 +148,7 @@ export default function Gallery({
           01
         </span>
         <div>
-          <p className="panel-kicker">灵感从这只鱼开始</p>
-          <h2 id="gallery-title">挑一只大肥鱼</h2>
+          <h2 id="gallery-title">底图库</h2>
           <p className="gallery-count">
             {archiveCount.toLocaleString("zh-CN")} 档案馆 ·{" "}
             {studioCount.toLocaleString("zh-CN")} 工坊补充
@@ -164,7 +163,7 @@ export default function Gallery({
       <div className="gallery-create-actions">
         <button
           type="button"
-          className="button button-primary"
+          className="button button-tonal"
           onClick={onGenerate}
         >
           <Sparkles size={18} aria-hidden="true" />
@@ -172,7 +171,7 @@ export default function Gallery({
         </button>
         <button
           type="button"
-          className="button button-tonal"
+          className="button button-primary"
           onClick={onUpload}
         >
           <ImagePlus size={18} aria-hidden="true" />
@@ -185,7 +184,7 @@ export default function Gallery({
         <input
           type="search"
           value={query}
-          placeholder="搜搜表情、名字或文件名…"
+          placeholder="搜索底图、标签…"
           aria-label="搜索素材名称、文件名或标签"
           onChange={(event) => {
             setQuery(event.target.value);
@@ -272,6 +271,9 @@ export default function Gallery({
                   width={sticker.width}
                   height={sticker.height}
                 />
+                <span className="source-format sticker-format" title="底图原始格式">
+                  {sticker.format}
+                </span>
                 <span className="sticker-label">{sticker.name}</span>
                 <span
                   className={`sticker-origin-badge origin-${personal ? "personal" : sticker.origin}`}

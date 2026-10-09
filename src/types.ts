@@ -14,6 +14,8 @@ export interface Sticker {
   sourceNote?: string;
   /** Full-resolution image URL. */
   src: string;
+  /** Original image format, identified before thumbnail or editing conversions. */
+  format: string;
   /** Lightweight gallery thumbnail URL. */
   preview: string;
   /** Searchable labels assigned to curated images. */
@@ -29,6 +31,9 @@ export interface Sticker {
   /** Preview metadata height; drawing uses the decoded image's natural height. */
   height: number;
 }
+
+/** Static formats available for browser downloads. */
+export type ExportFormat = "png" | "jpeg" | "webp";
 
 /** Image or canvas dimensions, in source, logical, or output pixels. */
 export interface ImageSize {
@@ -95,7 +100,7 @@ export interface EditorSettings {
   letterSpacing: number;
   /** Render each line along an upward arc. */
   curved: boolean;
-  /** Export background. Transparency is preserved in PNG output. */
+  /** Preferred background; PNG and WebP support transparency, while JPEG uses white. */
   background: "transparent" | "white";
   /** Reserve a caption band, or overlay text on the full image. */
   layout: "caption" | "overlay";

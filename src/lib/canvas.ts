@@ -1,4 +1,10 @@
-import type { Composition, EditorSettings, ImageSize } from "../types";
+import type {
+  Composition,
+  EditorSettings,
+  ExportFormat,
+  ImageSize,
+} from "../types";
+import { EXPORT_FORMATS } from "./image-formats";
 import { drawSticker } from "./render";
 
 export { CANVAS_SIZE } from "./render";
@@ -33,12 +39,31 @@ export function renderSticker(
   );
 }
 
-/** Encodes the rendered canvas as a PNG while preserving its alpha channel. */
-export function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+/**
+ * Encodes the rendered canvas in the requested format, using 92% quality for
+ * JPEG and WebP. Rejects unsupported formats instead of accepting PNG fallback.
+ *
+ * @param canvas The fully rendered export canvas.
+ * @param format The requested image encoding.
+ */
+export function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  format: ExportFormat,
+): Promise<Blob> {
+  const { mimeType, label } = EXPORT_FORMATS[format];
   return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error("图片导出失败，请重试"));
-    }, "image/png");
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("图片导出失败，请重试"));
+        } else if (blob.type !== mimeType) {
+          reject(new Error(`当前浏览器不支持导出 ${label} 格式，请选择其他格式`));
+        } else {
+          resolve(blob);
+        }
+      },
+      mimeType,
+      format === "png" ? undefined : 0.92,
+    );
   });
 }

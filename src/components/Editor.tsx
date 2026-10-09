@@ -7,9 +7,20 @@ import {
   Type,
   Upload,
 } from "lucide-react";
-import { useId, useRef, type ChangeEvent } from "react";
+import { useId, useRef, useState, type ChangeEvent } from "react";
 import { CAPTIONS, DEFAULT_SETTINGS } from "../lib/defaults";
 import type { EditorSettings, FontOption } from "../types";
+
+/** Choose six distinct suggestions without modifying the shared caption pool. */
+function pickCaptionSuggestions(): string[] {
+  const remaining = [...CAPTIONS];
+  const suggestions: string[] = [];
+  for (let index = 0; index < 6; index += 1) {
+    const choice = Math.floor(Math.random() * remaining.length);
+    suggestions.push(remaining.splice(choice, 1)[0]);
+  }
+  return suggestions;
+}
 
 /** A labeled range control with a live numeric value. */
 function Slider({
@@ -71,6 +82,8 @@ export default function Editor({
   /** Restore the initial editor settings. */ onReset: () => void;
 }) {
   const fontInput = useRef<HTMLInputElement>(null);
+  // Keep the suggestions stable while the user edits the caption or its style.
+  const [suggestions] = useState(pickCaptionSuggestions);
 
   /** Pick a caption different from the current one. */
   function shuffleCaption() {
@@ -90,8 +103,7 @@ export default function Editor({
       <header className="panel-heading">
         <span className="step-badge">03</span>
         <div>
-          <p className="panel-kicker">MAKE IT YOURS</p>
-          <h2>给它一点想法</h2>
+          <h2>配文字</h2>
         </div>
         <button
           className="icon-button reset-button"
@@ -106,7 +118,7 @@ export default function Editor({
         <label htmlFor="caption">表情文案</label>
         <button className="text-button" onClick={shuffleCaption}>
           <Shuffle size={14} />
-          来点灵感
+          换句台词
         </button>
       </div>
       <div className="caption-field">
@@ -114,17 +126,21 @@ export default function Editor({
           id="caption"
           rows={3}
           maxLength={200}
-          placeholder="这一刻，大肥鱼想说……"
+          placeholder="这次让鱼说点什么？"
           value={settings.text}
           onChange={(event) => onChange({ text: event.target.value })}
         />
         <div className="field-helper">
-          <span>换行，表达更多情绪</span>
+          <span>Enter 换行</span>
           <span>{settings.text.length} / 200</span>
         </div>
       </div>
-      <div className="suggestions">
-        {["好耶！", "让我深度思考一下", "鱼已经很努力了"].map((text) => (
+      <div
+        className="suggestions"
+        role="group"
+        aria-label="快捷文案，可横向滚动"
+      >
+        {suggestions.map((text) => (
           <button key={text} onClick={() => onChange({ text })}>
             {text}
           </button>
@@ -214,7 +230,7 @@ export default function Editor({
         <span>
           <CaseSensitive size={20} />
           <span>
-            弧形文字<small>让心情有一点弧度</small>
+            弧形文字<small>沿弧线排列文字</small>
           </span>
         </span>
         <input

@@ -3,6 +3,7 @@
     "id": "studio-design-cheer",
     "name": "给你打气",
     "src": "studio/designs/cheer.png",
+    "format": "PNG",
     "preview": "studio/designs/cheer.png",
     "tags": [
       "透明底",
@@ -29,6 +30,7 @@
     "id": "studio-design-bright-idea",
     "name": "灵感来了",
     "src": "studio/designs/bright-idea.png",
+    "format": "PNG",
     "preview": "studio/designs/bright-idea.png",
     "tags": [
       "透明底",
@@ -55,6 +57,7 @@
     "id": "studio-design-whale-skate",
     "name": "下班开溜",
     "src": "studio/designs/whale-skate.png",
+    "format": "PNG",
     "preview": "studio/designs/whale-skate.png",
     "tags": [
       "透明底",
@@ -81,6 +84,7 @@
     "id": "studio-design-whale-sleeping-bag",
     "name": "今天先躺平",
     "src": "studio/designs/whale-sleeping-bag.png",
+    "format": "PNG",
     "preview": "studio/designs/whale-sleeping-bag.png",
     "tags": [
       "透明底",
@@ -107,6 +111,7 @@
     "id": "studio-cutout-watermelon",
     "name": "吃瓜时间 · 透明",
     "src": "studio/cutouts/watermelon.png",
+    "format": "PNG",
     "preview": "studio/cutouts/watermelon.png",
     "tags": [
       "透明底",
@@ -127,6 +132,7 @@
     "id": "studio-cutout-whale-nap",
     "name": "鲸鱼窝里睡觉 · 透明",
     "src": "studio/cutouts/whale-nap.png",
+    "format": "PNG",
     "preview": "studio/cutouts/whale-nap.png",
     "tags": [
       "透明底",
@@ -147,6 +153,7 @@
     "id": "studio-cutout-grumpy",
     "name": "气鼓鼓 · 透明",
     "src": "studio/cutouts/grumpy.png",
+    "format": "PNG",
     "preview": "studio/cutouts/grumpy.png",
     "tags": [
       "透明底",
@@ -167,6 +174,7 @@
     "id": "studio-cutout-rice-time",
     "name": "开心干饭 · 透明",
     "src": "studio/cutouts/rice-time.png",
+    "format": "PNG",
     "preview": "studio/cutouts/rice-time.png",
     "tags": [
       "透明底",

@@ -1,3 +1,10 @@
+/* One local display face gives the sign its character; controls use the system font. */
+@font-face {
+  font-family: "Workshop Sign";
+  src: url("/fonts/MaokenAssortedSans-Lite.ttf") format("truetype");
+  font-display: swap;
+}
+
 /* Shared Material-inspired colors keep every surface coherent in both themes. */
 :root {
   font-family:
@@ -150,8 +157,8 @@ select {
 .app-header {
   max-width: 1600px;
   margin: 0 auto;
-  height: 94px;
-  padding: 0 40px;
+  min-height: 90px;
+  padding: 12px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -161,8 +168,8 @@ select {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
-  color: var(--text);
+  gap: 14px;
+  color: var(--accent);
   min-width: 0;
 }
 .brand:hover {
@@ -178,49 +185,49 @@ select {
   color: var(--accent);
   flex-shrink: 0;
 }
-.brand > span:nth-child(2) {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+.app-header .brand-mark {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--text);
+  border-radius: 50%;
+  background: var(--accent-soft);
+  transform: rotate(-7deg);
+}
+.app-header .brand-mark img {
+  position: absolute;
+  width: 176.6%;
+  max-width: none;
+  height: 176.6%;
+  left: -34.5%;
+  top: -16.9%;
+  object-fit: contain;
 }
 .brand strong {
-  font-size: 18px;
-  line-height: 1.25;
-  letter-spacing: 0.4px;
-  font-weight: 650;
+  font-family: "Workshop Sign", "PingFang SC", sans-serif;
+  font-size: 27px;
+  line-height: 1.2;
+  letter-spacing: 1px;
+  font-weight: 400;
   white-space: nowrap;
-}
-.brand small {
-  font-size: 11px;
-  letter-spacing: 2.2px;
-  font-weight: 600;
-  color: var(--text-secondary);
-}
-.brand-pill {
-  margin-left: 3px;
-  padding: 4px 7px;
-  background: var(--surface-container);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
 }
 .app-header nav {
   display: flex;
   align-items: center;
-  gap: 17px;
+  gap: 14px;
 }
 .about-button {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 10px 8px;
+  padding: 9px 8px;
   color: var(--text-secondary);
   background: transparent;
+  border-radius: 6px;
   font-size: 13px;
-  border-radius: 10px;
 }
 .about-button:hover {
   color: var(--accent);
@@ -250,6 +257,16 @@ select {
   height: 39px;
   background: var(--surface);
   border: 1px solid var(--border);
+}
+/* Header actions keep the compact shape used by the new wordmark. */
+.app-header .icon-button {
+  border-radius: 6px;
+}
+.app-header .theme-button {
+  width: 36px;
+  height: 36px;
+  border-color: var(--border-strong);
+  background: transparent;
 }
 .app-main {
   max-width: 1600px;
@@ -326,32 +343,6 @@ select {
 }
 .mobile-workshop-nav {
   display: none;
-}
-.selected-source {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-  margin-top: 10px;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-.selected-source > span:first-child {
-  color: var(--accent);
-  background: var(--accent-soft);
-  border-radius: 6px;
-  padding: 2px 7px;
-}
-.selected-source a {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 3px;
 }
 .panel,
 .gallery-panel {
@@ -464,14 +455,17 @@ select {
   max-height: 900px;
   display: flex;
   flex-direction: column;
-  padding: 23px 20px 20px;
+  padding: 24px 20px 20px;
 }
 .gallery-panel .panel-heading {
   margin-bottom: 21px;
   align-items: flex-start;
 }
-.gallery-panel .step-badge {
-  margin-top: 6px;
+/* Align the title with its badge; the collection count occupies a second line. */
+.gallery-panel .panel-heading h2 {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
 }
 .search-field {
   display: flex;
@@ -608,6 +602,23 @@ select {
   height: 120px;
   object-fit: contain;
   border-radius: 9px;
+}
+.source-format {
+  flex-shrink: 0;
+  padding: 2px 5px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.sticker-format {
+  position: absolute;
+  top: 11px;
+  left: 11px;
+  pointer-events: none;
 }
 .sticker-label {
   display: block;
@@ -750,32 +761,44 @@ select {
 .preview-panel .panel-heading {
   margin-bottom: 25px;
 }
-.live-badge {
+.canvas-drag-hint {
   display: inline-flex;
   gap: 5px;
   align-items: center;
-  color: var(--green);
-  background: var(--green-soft);
+  color: var(--accent);
+  background: var(--accent-soft);
   padding: 5px 7px;
   border-radius: 6px;
   font-size: 11px;
   white-space: nowrap;
   margin-left: auto;
 }
-.live-badge > span,
 .local-note > span {
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: currentColor;
 }
-.preview-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.canvas-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-bottom: 17px;
-  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.canvas-control-field {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.canvas-control-field .segmented-control {
+  min-height: 38px;
+}
+.canvas-control-field .segmented-control > button {
+  flex: 1;
+  padding-inline: 6px;
 }
 .segmented-control {
   display: inline-flex;
@@ -805,31 +828,16 @@ select {
   color: var(--accent);
   box-shadow: 0 1px 4px rgb(32 53 82 / 7%);
 }
-.crop-button {
-  margin-left: auto;
-  min-height: 36px;
-}
-.canvas-ratio-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: -4px 0 16px;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-.canvas-ratio-row select {
+.canvas-control-field select {
+  appearance: auto;
   min-width: 0;
-  max-width: 100%;
-  padding: 7px 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface-soft);
   color: var(--text);
-}
-.canvas-ratio-row .text-button {
-  margin-left: auto;
-  font-size: 12px;
 }
 .canvas-stage {
   display: grid;
@@ -888,23 +896,56 @@ select {
 .canvas-error {
   color: var(--pink);
 }
-.canvas-caption {
+.canvas-source-heading {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-top: 13px;
-  padding: 0 1px;
-  color: var(--text-muted);
+  gap: 6px 12px;
+  margin-top: 18px;
   font-size: 12px;
-  line-height: 1.7;
 }
-.canvas-caption > span:last-child {
+.canvas-source-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.selected-source {
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+.canvas-source-link {
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 4px;
+  color: var(--accent);
+  font-size: 11px;
   white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.canvas-source-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 12px;
+}
+.canvas-source-actions .text-button {
+  min-height: 32px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.crop-button {
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
 }
 .current-image-name {
   color: var(--text-secondary);
@@ -919,14 +960,19 @@ select {
   color: var(--text-secondary);
   margin-top: 10px;
 }
-.output-options {
-  display: flex;
-  flex-wrap: wrap;
+.canvas-export {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-soft);
+}
+.output-options,
+.export-settings-heading {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
   align-items: center;
-  gap: 9px;
-  margin-top: 25px;
-  padding-top: 18px;
-  border-top: 1px solid var(--border);
+  gap: 12px;
 }
 .output-options > span {
   font-size: 12px;
@@ -938,9 +984,11 @@ select {
   padding: 2px;
 }
 .background-control > button {
-  padding: 7px 8px;
-  gap: 4px;
-  font-size: 11px;
+  flex: 1;
+  min-height: 32px;
+  padding: 7px 10px;
+  gap: 6px;
+  font-size: 12px;
   border-radius: 7px;
 }
 .transparency-swatch,
@@ -959,28 +1007,29 @@ select {
   background: #fff;
 }
 .export-settings {
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border);
+  margin-top: 12px;
   color: var(--text-secondary);
   font-size: 12px;
 }
-.export-settings-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+.export-settings-heading + .export-settings-heading,
+.export-size-hint + .export-settings-heading {
+  margin-top: 12px;
 }
 .export-settings select,
 .export-custom-size input {
-  background: var(--surface-soft);
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
   font-size: 13px;
   padding: 8px;
   max-width: 100%;
+}
+.export-settings select {
+  appearance: auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
 }
 .export-custom-size {
   display: grid;
@@ -1006,6 +1055,10 @@ select {
   cursor: pointer;
 }
 .export-aspect-lock input {
+  appearance: auto;
+  width: 14px;
+  height: 14px;
+  margin: 0;
   accent-color: var(--accent);
 }
 .export-size-hint {
@@ -1024,7 +1077,7 @@ select {
   display: grid;
   grid-template-columns: 1fr 1.45fr;
   gap: 11px;
-  margin-top: 19px;
+  margin-top: 16px;
 }
 .export-actions .button {
   min-height: 46px;
@@ -1103,11 +1156,18 @@ select {
 }
 .suggestions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
   gap: 6px;
   margin: 11px 0 23px;
 }
 .suggestions > button {
+  flex: 0 0 auto;
+  white-space: nowrap;
   padding: 6px 8px;
   border-radius: 7px;
   border: 1px solid var(--border);
@@ -1119,6 +1179,9 @@ select {
   color: var(--accent);
   background: var(--accent-soft);
   border-color: var(--accent-border);
+}
+.suggestions > button:focus-visible {
+  outline-offset: -3px;
 }
 .select-wrap {
   display: flex;
@@ -1647,13 +1710,6 @@ select option {
     width: 23px;
     height: 23px;
   }
-  .output-options {
-    gap: 5px;
-  }
-  .canvas-caption {
-    flex-wrap: wrap;
-    gap: 4px 12px;
-  }
   .app-footer {
     padding-right: 30px;
     padding-left: 30px;
@@ -1678,7 +1734,7 @@ select option {
   .panel-heading h2 {
     font-size: 15px;
   }
-  .live-badge {
+  .canvas-drag-hint {
     font-size: 10px;
     padding: 4px 5px;
   }
@@ -1698,13 +1754,6 @@ select option {
     width: 22px;
     height: 22px;
   }
-  .output-options {
-    flex-wrap: wrap;
-    row-gap: 10px;
-  }
-  .output-options > span {
-    flex: 1;
-  }
 }
 
 @media (max-width: 1050px) {
@@ -1714,6 +1763,7 @@ select option {
   }
   .gallery-panel {
     max-height: 900px;
+    padding-top: 24px;
   }
   .preview-panel {
     padding: 24px;
@@ -1773,12 +1823,6 @@ select option {
   .intro h1 {
     font-size: 28px;
   }
-  .gallery-panel .panel-heading h2 {
-    font-size: 16px;
-  }
-  .output-options {
-    gap: 9px;
-  }
   .app-footer {
     flex-wrap: wrap;
   }
@@ -1815,7 +1859,7 @@ select option {
     padding-bottom: 80px;
   }
   .app-header {
-    height: 78px;
+    min-height: 76px;
     padding: 0 20px;
     gap: 10px;
   }
@@ -1827,14 +1871,13 @@ select option {
     height: 40px;
     border-radius: 14px;
   }
+  .app-header .brand-mark {
+    width: 43px;
+    height: 43px;
+  }
   .brand strong {
-    font-size: 15px;
+    font-size: 21px;
   }
-  .brand small {
-    font-size: 10px;
-    letter-spacing: 1.4px;
-  }
-  .brand-pill,
   .nav-divider {
     display: none;
   }
@@ -1849,7 +1892,7 @@ select option {
     width: 20px;
     height: 20px;
   }
-  .theme-button {
+  .app-header .theme-button {
     width: 35px;
     height: 35px;
   }
@@ -1911,15 +1954,6 @@ select option {
   .panel-heading {
     margin-bottom: 22px;
   }
-  .gallery-panel .panel-heading {
-    align-items: center;
-  }
-  .gallery-panel .step-badge {
-    margin-top: 0;
-  }
-  .gallery-panel .panel-heading h2 {
-    font-size: 17px;
-  }
   .gallery-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 10px;
@@ -1945,12 +1979,6 @@ select option {
   }
   .gallery-create-actions .button {
     font-size: 14px;
-  }
-  .canvas-caption > span:last-child {
-    font-size: 12px;
-  }
-  .output-options {
-    margin-top: 21px;
   }
   .color-palette {
     gap: 16px;
@@ -2019,14 +2047,21 @@ select option {
 
 @media (max-width: 420px) {
   .app-header {
-    padding-right: 15px;
-    padding-left: 15px;
+    padding-inline: 12px;
+    gap: 6px;
+  }
+  .app-header nav {
+    gap: 0;
+  }
+  .app-header nav > a {
+    display: none;
+  }
+  .brand {
+    gap: 8px;
   }
   .brand strong {
-    font-size: 14px;
-  }
-  .brand small {
-    font-size: 10px;
+    font-size: 20px;
+    letter-spacing: 0;
   }
   .app-main {
     padding-left: 12px;
@@ -2052,22 +2087,27 @@ select option {
   .panel-heading h2 {
     font-size: 16px;
   }
-  .live-badge {
+  .canvas-drag-hint {
     font-size: 10px;
   }
-  .canvas-caption {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 4px;
+  .canvas-source-link > span {
+    display: none;
   }
-  .output-options {
-    gap: 5px;
+  .canvas-controls {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
-  .output-options > span {
-    font-size: 11px;
+  .canvas-control-field {
+    grid-template-columns: 64px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
   }
-  .background-control > button {
-    padding: 7px 6px;
+  .canvas-export {
+    padding: 12px;
+  }
+  .output-options,
+  .export-settings-heading {
+    gap: 8px;
   }
   .export-actions {
     grid-template-columns: 1fr 1.25fr;
@@ -2091,6 +2131,21 @@ select option {
   .color-swatch.selected::before {
     left: 9px;
     top: 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .canvas-source-heading {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 8px;
+  }
+  .canvas-source-actions {
+    display: contents;
+  }
+  .restore-crop-button {
+    grid-column: 2;
+    justify-self: end;
   }
 }
 

@@ -87,6 +87,24 @@ const featuredByFilename = new Map(
   ]),
 );
 
+/**
+ * Identify an original image from its file signature, independently of its filename.
+ * @param {Buffer} bytes Original image bytes.
+ * @returns {"PNG" | "JPEG" | "GIF" | "WebP"} Display label for the detected encoding.
+ */
+function detectOriginalFormat(bytes) {
+  if (bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])))
+    return "PNG";
+  if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return "JPEG";
+  if (["GIF87a", "GIF89a"].includes(bytes.toString("ascii", 0, 6))) return "GIF";
+  if (
+    bytes.toString("ascii", 0, 4) === "RIFF" &&
+    bytes.toString("ascii", 8, 12) === "WEBP"
+  )
+    return "WebP";
+  throw new Error("Unsupported original image format");
+}
+
 /** Copy one image only when its manifest path and resolved source stay in the allowed directory. */
 async function copyArchiveAsset(
   relativePath,
@@ -153,6 +171,10 @@ async function syncAssets() {
         resolvedSourceRoot,
         stagingRoot,
       );
+      /** Encoding detected from the copied original, since upstream extensions can be inaccurate. */
+      const format = detectOriginalFormat(
+        await readFile(resolve(stagingRoot, entry.original)),
+      );
 
       stickers.push({
         id: entry.filename,
@@ -161,11 +183,13 @@ async function syncAssets() {
         name:
           editorial?.name ?? `大肥鱼 #${String(index + 1).padStart(3, "0")}`,
         src: `archive/${entry.original}`,
+        /** Original encoding shown in the gallery and canvas details. */
+        format,
         preview: `archive/${entry.preview}`,
         tags: ["大肥鱼", "鲸鱼娘", "DeepSeek", ...(editorial?.tags ?? [])],
         featured: Boolean(editorial),
         selfMade: Boolean(entry.selfMade),
-        animated: entry.filename.toLowerCase().endsWith(".gif"),
+        animated: format === "GIF",
         // Archive metadata describes the thumbnail; its aspect ratio matches the original.
         width: entry.width,
         height: entry.height,

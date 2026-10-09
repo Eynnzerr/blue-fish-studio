@@ -32,10 +32,12 @@ import {
   SYSTEM_FONT_FAMILY,
 } from "./lib/defaults";
 import { canvasToBlob, renderSticker } from "./lib/canvas";
+import { EXPORT_FORMATS, readImageFormat } from "./lib/image-formats";
 import { CANVAS_SIZE, sizeFromLongestEdge } from "./lib/render";
 import type {
   Composition,
   EditorSettings,
+  ExportFormat,
   FontOption,
   ImageCrop,
   ImageSize,
@@ -103,6 +105,8 @@ export default function App() {
   const [cropOpen, setCropOpen] = useState(false);
   const [canvasMode, setCanvasMode] = useState<CanvasMode>("square");
   const [exportPreset, setExportPreset] = useState<number | null>(1024);
+  /** Download encoding; clipboard images always use PNG. */
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
   const [customSize, setCustomSize] = useState<ImageSize>({
     width: 1024,
     height: 1024,
@@ -147,6 +151,12 @@ export default function App() {
           aspect,
           exportPreset ?? Math.max(customSize.width, customSize.height),
         );
+  /** Keep the preview and exported pixels identical when JPEG requires a white background. */
+  const canvasSettings = useMemo<EditorSettings>(
+    () =>
+      exportFormat === "jpeg" ? { ...settings, background: "white" } : settings,
+    [settings, exportFormat],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -284,7 +294,7 @@ export default function App() {
     }
   }
 
-  /** Start custom editing from the currently displayed PNG dimensions. */
+  /** Start custom editing from the currently displayed output dimensions. */
   function changeExportPreset(preset: number | null): void {
     if (preset === null) setCustomSize(outputSize);
     setExportPreset(preset);
@@ -309,6 +319,7 @@ export default function App() {
     uploaded.src = url;
     try {
       await uploaded.decode();
+      const format = await readImageFormat(blob);
       if (!mounted.current) {
         URL.revokeObjectURL(url);
         return;
@@ -319,11 +330,12 @@ export default function App() {
         name,
         sourceNote,
         src: url,
+        format,
         preview: url,
         featured: false,
         tags: [],
         selfMade: false,
-        animated: blob.type === "image/gif",
+        animated: format === "GIF",
         width: uploaded.naturalWidth,
         height: uploaded.naturalHeight,
       };
@@ -376,31 +388,31 @@ export default function App() {
     }
   }
 
-  /** Capture the current composition at the selected PNG output resolution. */
-  async function createPng() {
+  /** Capture the visible composition at the selected output resolution and encoding. */
+  async function createImage(format: ExportFormat) {
     if (!image || !fontReady) throw new Error("底图和字体仍在加载");
     if (!sizeValid) throw new Error("请填写有效的导出尺寸");
     const output = document.createElement("canvas");
     // Draw synchronously to preserve the exact composition at the moment of the click.
-    renderSticker(output, image, settings, composition, outputSize);
-    return canvasToBlob(output);
+    renderSticker(output, image, canvasSettings, composition, outputSize);
+    return canvasToBlob(output, format);
   }
 
-  /** Download a rendered PNG with its alpha channel preserved. */
+  /** Download the composition using the selected format and matching filename extension. */
   async function download() {
     setExporting(true);
     try {
-      const blob = await createPng();
+      const blob = await createImage(exportFormat);
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `大肥鱼-${selected?.name.replace(/\.[^.]+$/, "") || "表情包"}.png`;
+      link.download = `大肥鱼-${selected?.name.replace(/\.[^.]+$/, "") || "表情包"}.${EXPORT_FORMATS[exportFormat].extension}`;
       link.click();
       siteStats.recordExport();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       setToast("表情包已下载，去分享你的心情吧");
-    } catch {
-      setToast("导出失败，请重试");
+    } catch (cause) {
+      setToast(cause instanceof Error ? cause.message : "导出失败，请重试");
     } finally {
       setExporting(false);
     }
@@ -409,19 +421,19 @@ export default function App() {
   /** Copy a PNG while retaining the browser's user-activation permission. */
   async function copy() {
     if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") {
-      setToast("当前浏览器不支持复制图片，请使用下载 PNG");
+      setToast("当前浏览器不支持复制图片，请下载图片");
       return;
     }
     setExporting(true);
     try {
       // Passing the Blob promise immediately also supports Safari's activation rules.
       await navigator.clipboard.write([
-        new ClipboardItem({ "image/png": createPng() }),
+        new ClipboardItem({ "image/png": createImage("png") }),
       ]);
       siteStats.recordExport();
       setToast("已复制图片，粘贴到聊天框试试");
     } catch {
-      setToast("浏览器未允许复制图片，请使用下载 PNG");
+      setToast("浏览器未允许复制图片，请下载图片");
     } finally {
       setExporting(false);
     }
@@ -433,15 +445,14 @@ export default function App() {
       <header className="app-header">
         <a className="brand" href="./">
           <span className="brand-mark">
-            <Fish size={27} strokeWidth={2.1} />
+            <img
+              src={assetUrl("studio/designs/bright-answer.png")}
+              alt=""
+            />
           </span>
-          <span>
-            <strong>大肥鱼表情工坊</strong>
-            <small>BLUE FISH STUDIO</small>
-          </span>
-          <span className="brand-pill">BETA</span>
+          <strong>大肥鱼表情工坊</strong>
         </a>
-        <nav>
+        <nav aria-label="网站导航">
           <a
             className="icon-button"
             href="https://github.com/Eynnzerr/blue-fish-studio"
@@ -454,6 +465,7 @@ export default function App() {
           </a>
           <button
             className="about-button"
+            aria-label="关于工坊"
             onClick={() => aboutRef.current?.showModal()}
           >
             <Info size={17} />
@@ -473,21 +485,15 @@ export default function App() {
       <main className="app-main">
         <section className="intro">
           <div>
-            <div className="eyebrow">
-              <span />
-              一点灵感，一点鱼味
-            </div>
             <h1>
-              今天，让大肥鱼替你<span>表达。</span>
+              有话，<span>让鱼说。</span>
               <Sparkles className="headline-sparkle" size={28} />
             </h1>
-            <p>
-              挑一张喜欢的底图，写一句此刻的心情。你的专属表情包，就这么简单。
-            </p>
+            <p>大肥鱼已就位，今天配什么词？</p>
           </div>
           <div className="intro-note">
             <Heart size={16} />
-            为每一种小情绪而作
+            表情加工中
           </div>
         </section>
         <div className="workspace">
@@ -502,58 +508,51 @@ export default function App() {
             <header className="panel-heading">
               <span className="step-badge">02</span>
               <div>
-                <p className="panel-kicker">YOUR LITTLE CANVAS</p>
-                <h2>让心情显形</h2>
+                <h2>画布</h2>
               </div>
-              <span className="live-badge">
-                <span />
-                实时预览
+              <span className="canvas-drag-hint">
+                <MousePointer2 size={13} />
+                拖动文字调整位置
               </span>
             </header>
-            <div className="preview-toolbar">
-              <div className="segmented-control" aria-label="底图布局">
-                <button
-                  className={settings.layout === "caption" ? "active" : ""}
-                  aria-pressed={settings.layout === "caption"}
-                  onClick={() => updateSettings({ layout: "caption" })}
+            <div className="canvas-controls">
+              <div className="canvas-control-field">
+                <span id="canvas-layout-label">文字布局</span>
+                <div
+                  className="segmented-control"
+                  role="group"
+                  aria-labelledby="canvas-layout-label"
                 >
-                  留白配字
-                </button>
-                <button
-                  className={settings.layout === "overlay" ? "active" : ""}
-                  aria-pressed={settings.layout === "overlay"}
-                  onClick={() => updateSettings({ layout: "overlay" })}
-                >
-                  叠加文字
-                </button>
+                  <button
+                    className={settings.layout === "caption" ? "active" : ""}
+                    aria-pressed={settings.layout === "caption"}
+                    onClick={() => updateSettings({ layout: "caption" })}
+                  >
+                    留白配字
+                  </button>
+                  <button
+                    className={settings.layout === "overlay" ? "active" : ""}
+                    aria-pressed={settings.layout === "overlay"}
+                    onClick={() => updateSettings({ layout: "overlay" })}
+                  >
+                    叠加文字
+                  </button>
+                </div>
               </div>
-              <button
-                className="text-button crop-button"
-                disabled={!image || imageLoading}
-                onClick={() => setCropOpen(true)}
-              >
-                <Crop size={16} />
-                {crop ? "重新裁剪" : "裁剪底图"}
-              </button>
-            </div>
-            <div className="canvas-ratio-row">
-              <label htmlFor="canvas-ratio">画布比例</label>
-              <select
-                id="canvas-ratio"
-                value={canvasMode}
-                onChange={(event) =>
-                  changeCanvasMode(event.target.value as CanvasMode)
-                }
-              >
-                <option value="square">正方形</option>
-                <option value="image">跟随底图 / 裁剪比例</option>
-                <option value="custom">自定义宽高</option>
-              </select>
-              {crop && (
-                <button className="text-button" onClick={() => applyCrop(null)}>
-                  恢复底图
-                </button>
-              )}
+              <div className="canvas-control-field">
+                <label htmlFor="canvas-ratio">画布比例</label>
+                <select
+                  id="canvas-ratio"
+                  value={canvasMode}
+                  onChange={(event) =>
+                    changeCanvasMode(event.target.value as CanvasMode)
+                  }
+                >
+                  <option value="square">正方形</option>
+                  <option value="image">跟随底图 / 裁剪</option>
+                  <option value="custom">自定义宽高</option>
+                </select>
+              </div>
             </div>
             <div
               className="canvas-stage"
@@ -564,7 +563,7 @@ export default function App() {
             >
               <StickerCanvas
                 image={ready ? image : null}
-                settings={settings}
+                settings={canvasSettings}
                 composition={composition}
                 onPositionChange={(x, y) => updateSettings({ x, y })}
                 canvasRef={canvasRef}
@@ -576,102 +575,138 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="canvas-caption">
-              <span className="current-image-name">
-                {selected?.name || "正在准备素材…"}
-              </span>
-              <span>
-                <MousePointer2 size={14} />
-                拖动文字，找到刚好的位置
-              </span>
-            </div>
-            {selected && (
-              <p className="selected-source">
-                <span>
-                  {selected.origin === "studio"
-                    ? "工坊补充"
-                    : selected.origin === "archive"
-                      ? "档案馆"
-                      : "我的素材"}
+            <div className="canvas-source-heading">
+              <div className="canvas-source-info">
+                <span className="current-image-name" title={selected?.name}>
+                  {selected?.name || "正在准备素材…"}
                 </span>
-                {selected.origin === "studio" ? (
-                  <>
-                    <span>· {selected.sourceNote || "透明底衍生素材"}</span>
-                    {selected.sourceId && (
-                      <a
-                        href={assetUrl(`archive/media/${selected.sourceId}`)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        查看原图
-                        <ExternalLink size={12} />
-                      </a>
-                    )}
-                  </>
-                ) : selected.origin === "archive" ? (
-                  <span>· blue-fish-archive 原图</span>
-                ) : (
-                  <span>· {selected.sourceNote}</span>
+                {selected && (
+                  <span className="source-format" title="底图原始格式">
+                    {selected.format}
+                  </span>
                 )}
-              </p>
-            )}
-            {selected?.animated && (
-              <p className="animation-note">动图将作为静态底图，导出为 PNG。</p>
-            )}
-            <div className="output-options">
-              <span>画布背景</span>
-              <div className="segmented-control background-control">
+                {selected && (
+                  <span
+                    className="selected-source"
+                    title={
+                      selected.sourceNote ||
+                      (selected.origin === "archive"
+                        ? "blue-fish-archive 原图"
+                        : "透明底衍生素材")
+                    }
+                  >
+                    {selected.origin === "studio"
+                      ? "工坊补充"
+                      : selected.origin === "archive"
+                        ? "档案馆"
+                        : "我的素材"}
+                  </span>
+                )}
+                {selected?.origin === "studio" && selected.sourceId && (
+                  <a
+                    className="canvas-source-link"
+                    href={assetUrl(`archive/media/${selected.sourceId}`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="查看原图"
+                    title="查看原图"
+                  >
+                    <span>查看原图</span>
+                    <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
+              <div className="canvas-source-actions">
                 <button
-                  className={
-                    settings.background === "transparent" ? "active" : ""
-                  }
-                  aria-pressed={settings.background === "transparent"}
-                  onClick={() => updateSettings({ background: "transparent" })}
+                  className="text-button crop-button"
+                  disabled={!image || imageLoading}
+                  onClick={() => setCropOpen(true)}
                 >
-                  <span className="transparency-swatch" />
-                  透明
+                  <Crop size={15} />
+                  {crop ? "重新裁剪" : "裁剪底图"}
+                </button>
+                {crop && (
+                  <button
+                    className="text-button restore-crop-button"
+                    onClick={() => applyCrop(null)}
+                  >
+                    恢复底图
+                  </button>
+                )}
+              </div>
+            </div>
+            {selected?.animated && (
+              <p className="animation-note">动图将作为静态底图，导出为静态图片。</p>
+            )}
+            <div className="canvas-export" role="group" aria-label="导出图片">
+              <div className="output-options">
+                <span id="canvas-background-label">画布背景</span>
+                <div
+                  className="segmented-control background-control"
+                  role="group"
+                  aria-labelledby="canvas-background-label"
+                >
+                  <button
+                    className={
+                      canvasSettings.background === "transparent" ? "active" : ""
+                    }
+                    aria-pressed={canvasSettings.background === "transparent"}
+                    disabled={exportFormat === "jpeg"}
+                    onClick={() => updateSettings({ background: "transparent" })}
+                  >
+                    <span className="transparency-swatch" />
+                    透明
+                  </button>
+                  <button
+                    className={
+                      canvasSettings.background === "white" ? "active" : ""
+                    }
+                    aria-pressed={canvasSettings.background === "white"}
+                    disabled={exportFormat === "jpeg"}
+                    onClick={() => updateSettings({ background: "white" })}
+                  >
+                    <span className="white-swatch" />
+                    白色
+                  </button>
+                </div>
+              </div>
+              <ExportOptions
+                size={outputSize}
+                format={exportFormat}
+                onFormatChange={setExportFormat}
+                preset={exportPreset}
+                locked={sizeLocked}
+                aspect={aspect}
+                onPresetChange={changeExportPreset}
+                onLockedChange={setSizeLocked}
+                onSizeChange={changeOutputSize}
+                onValidityChange={setSizeValid}
+              />
+              <div className="export-actions">
+                <button
+                  className="button button-outlined"
+                  title="复制为 PNG 图片"
+                  disabled={!ready || exporting || !sizeValid}
+                  onClick={() => void copy()}
+                >
+                  <Copy size={18} />
+                  复制图片
                 </button>
                 <button
-                  className={settings.background === "white" ? "active" : ""}
-                  aria-pressed={settings.background === "white"}
-                  onClick={() => updateSettings({ background: "white" })}
+                  className="button button-primary"
+                  disabled={!ready || exporting || !sizeValid}
+                  onClick={() => void download()}
                 >
-                  <span className="white-swatch" />
-                  白色
+                  <Download size={19} />
+                  {exporting
+                    ? "正在生成…"
+                    : `下载 ${EXPORT_FORMATS[exportFormat].label}`}
                 </button>
               </div>
             </div>
-            <ExportOptions
-              size={outputSize}
-              preset={exportPreset}
-              locked={sizeLocked}
-              aspect={aspect}
-              onPresetChange={changeExportPreset}
-              onLockedChange={setSizeLocked}
-              onSizeChange={changeOutputSize}
-              onValidityChange={setSizeValid}
-            />
-            <div className="export-actions">
-              <button
-                className="button button-outlined"
-                disabled={!ready || exporting || !sizeValid}
-                onClick={() => void copy()}
-              >
-                <Copy size={18} />
-                复制图片
-              </button>
-              <button
-                className="button button-primary"
-                disabled={!ready || exporting || !sizeValid}
-                onClick={() => void download()}
-              >
-                <Download size={19} />
-                {exporting ? "正在生成…" : "下载 PNG"}
-              </button>
-            </div>
             <p className="local-note">
               <span />
-              文字排版与图片导出，在你的浏览器里完成
+              图片在本地处理，做好就能带走。
             </p>
           </section>
           <Editor
@@ -694,13 +729,13 @@ export default function App() {
         </button>
         <button onClick={() => jumpToPanel("editor")}>
           <Type size={20} />
-          写文案
+          配文字
         </button>
       </nav>
       <footer className={`app-footer${siteStats.enabled ? " has-stats" : ""}`}>
         <span>
           <Fish size={16} />
-          让每一天，都有一点鱼的快乐。
+          小小表情，大有话说。
         </span>
         {siteStats.enabled && (
           <SiteStats
@@ -710,7 +745,7 @@ export default function App() {
         )}
         <div>
           <a
-            href="https://github.com/EDMOK/blue-fish-archive"
+            href="https://fisharchive.cc/"
             target="_blank"
             rel="noreferrer"
           >
@@ -763,7 +798,7 @@ export default function App() {
         </div>
         <p>
           一个围绕 DeepSeek
-          鲸鱼娘的同人表情包制作器。选底图、写心情，把一点小快乐带进聊天框。
+          鲸鱼娘的同人表情包制作器。用你喜欢的底图，配上你想说的话。
         </p>
         <dl>
           <dt>素材整理</dt>

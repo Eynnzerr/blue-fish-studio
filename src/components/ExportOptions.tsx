@@ -1,17 +1,22 @@
 import { LockKeyhole, UnlockKeyhole } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { ImageSize } from "../types";
+import { EXPORT_FORMATS } from "../lib/image-formats";
+import type { ExportFormat, ImageSize } from "../types";
 
-/** Controls for selecting an output resolution without changing image content. */
+/** Controls for selecting an image encoding and output resolution. */
 interface ExportOptionsProps {
-  /** Actual PNG dimensions displayed beside the export actions. */
+  /** Actual image dimensions displayed beside the export actions. */
   size: ImageSize;
+  /** Selected image encoding for downloads. */
+  format: ExportFormat;
   /** Longest-edge preset, or null for custom dimensions. */
   preset: number | null;
   /** Whether editing one axis should preserve the current canvas aspect. */
   locked: boolean;
   /** Current logical aspect, before integer output rounding. */
   aspect: number;
+  /** Select the image encoding for downloads. */
+  onFormatChange: (format: ExportFormat) => void;
   /** Select a longest-edge preset or start custom input. */
   onPresetChange: (preset: number | null) => void;
   /** Change the aspect lock. */
@@ -22,15 +27,17 @@ interface ExportOptionsProps {
   onValidityChange: (valid: boolean) => void;
 }
 
-/** Largest supported PNG dimension on either axis. */
+/** Largest supported image dimension on either axis. */
 const MAX_EXPORT_SIZE = 4096;
 
-/** Select presets or edit exact dimensions, retaining incomplete input while typing. */
+/** Select an encoding and dimensions, retaining incomplete dimension input while typing. */
 export default function ExportOptions({
   size,
+  format,
   preset,
   locked,
   aspect,
+  onFormatChange,
   onPresetChange,
   onLockedChange,
   onSizeChange,
@@ -75,6 +82,26 @@ export default function ExportOptions({
 
   return (
     <div className="export-settings">
+      <div className="export-settings-heading export-format-row">
+        <label htmlFor="export-format">导出格式</label>
+        <select
+          id="export-format"
+          value={format}
+          aria-describedby={format !== "png" ? "export-format-hint" : undefined}
+          onChange={(event) => onFormatChange(event.target.value as ExportFormat)}
+        >
+          <option value="png">PNG · 无损透明</option>
+          <option value="jpeg">JPEG · 白色背景</option>
+          <option value="webp">WebP · 支持透明</option>
+        </select>
+      </div>
+      {format !== "png" && (
+        <p className="export-size-hint" id="export-format-hint">
+          {format === "jpeg"
+            ? "JPEG 使用白色背景；复制图片仍为 PNG。"
+            : "复制图片使用 PNG。"}
+        </p>
+      )}
       <div className="export-settings-heading">
         <label htmlFor="export-resolution">导出尺寸</label>
         <select
@@ -151,7 +178,7 @@ export default function ExportOptions({
         </p>
       ) : (
         <p className="export-size-hint">
-          导出 {size.width} × {size.height} px PNG
+          导出 {size.width} × {size.height} px {EXPORT_FORMATS[format].label}
         </p>
       )}
     </div>
