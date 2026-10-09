@@ -33,6 +33,7 @@ Moesekai 源仓库采用 [GNU AGPL-3.0](https://github.com/StarMoe-org/Moesekai/
 | --- | --- | --- |
 | React、React DOM | [facebook/react](https://github.com/facebook/react) | MIT |
 | Lucide React 图标 | [lucide-icons/lucide](https://github.com/lucide-icons/lucide) | ISC；部分图标源自 MIT 授权的 Feather |
+| React Image Crop 裁剪交互 | [dominictobias/react-image-crop](https://github.com/dominictobias/react-image-crop) | [ISC](public/licenses/react-image-crop.txt)；Copyright (c) 2015, Dominic Tobias |
 | API 图片渲染 `@napi-rs/canvas` | [Brooooooklyn/canvas](https://github.com/Brooooooklyn/canvas) | [MIT](https://github.com/Brooooooklyn/canvas/blob/main/LICENSE)；Copyright (c) 2020 lynweklm@gmail.com |
 | API TypeScript 执行器 `tsx` | [privatenumber/tsx](https://github.com/privatenumber/tsx) | [MIT](https://github.com/privatenumber/tsx/blob/master/LICENSE)；Copyright (c) Hiroki Osame |
 

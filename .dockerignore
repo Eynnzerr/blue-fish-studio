@@ -3,6 +3,7 @@
 node_modules
 dist
 .preview
+data
 .env*
 *.tsbuildinfo
 docs

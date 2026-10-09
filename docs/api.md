@@ -4,7 +4,7 @@
 
 ## 启动
 
-在项目根目录使用 Node.js 20.19+ 或 22.12+：
+在项目根目录使用 Node.js 22.13+（统计持久化使用内置 `node:sqlite`）：
 
 ```sh
 npm ci
@@ -39,6 +39,9 @@ Docker 使用 Node.js 22。Compose 默认将服务端口映射到主机的 `127.
 | `API_PORT` | `8787` | Compose 映射到主机的端口，区别于容器内的 `PORT` |
 | `MAX_CONCURRENT_RENDERS` | `2` | 同时处理的渲染请求上限 |
 | `RATE_LIMIT_PER_MINUTE` | `60` | 全服务共用的每分钟渲染请求上限 |
+| `STATS_DB_PATH` | `data/stats.sqlite` | SQLite 数据库路径；Compose 使用 `/app/data/stats.sqlite` 与持久卷 |
+| `STATS_ALLOWED_ORIGINS` | 本机 localhost / 127.0.0.1 的 5173、5174 端口 | 逗号分隔的网站 Origin，供统计跨域与上报校验 |
+| `STATS_RATE_LIMIT_PER_MINUTE` | `120` | 每个直接连接地址每分钟的统计请求上限 |
 
 ## 自测
 
@@ -52,11 +55,13 @@ API_KEY='replace-with-your-key' npm run smoke:api
 
 ## 接口
 
-除 `GET /healthz` 外，所有接口都要求请求头 `Authorization: Bearer <API_KEY>`。
+图片与素材接口要求请求头 `Authorization: Bearer <API_KEY>`。健康检查和统计接口无需此密钥，统计接口的 Origin 校验与请求说明见 [全站统计](statistics.md)。
 
 | 方法与路径 | 返回内容 |
 | --- | --- |
 | `GET /healthz` | 服务健康状态，无需认证 |
+| `GET /api/v1/stats` | JSON：累计访问、累计导出、统计起始时间 |
+| `POST /api/v1/stats/events` | 上报一个访问或导出事件，返回去重后的累计值 |
 | `GET /api/v1/stickers` | JSON：`{ "stickers": [...] }`，每项包含 `id`、`name`、`origin`、`tags`、`animated`、`featured` |
 | `POST /api/v1/stickers/preview` | `image/png`：带编号的素材缩略图目录 |
 | `GET /api/v1/fonts` | JSON：`{ "fonts": [...] }`，每项包含 `id`、`name` |

@@ -30,13 +30,52 @@ export interface Sticker {
   height: number;
 }
 
-/** Serializable drawing settings measured in a 512 × 512 logical canvas. */
+/** Image or canvas dimensions, in source, logical, or output pixels. */
+export interface ImageSize {
+  /** Horizontal extent. */
+  width: number;
+  /** Vertical extent. */
+  height: number;
+}
+
+/** Source-image selection expressed as percentages of the original image. */
+export interface ImageCrop {
+  /** Left edge as a percentage of the original width. */
+  x: number;
+  /** Top edge as a percentage of the original height. */
+  y: number;
+  /** Selected width as a percentage of the original width. */
+  width: number;
+  /** Selected height as a percentage of the original height. */
+  height: number;
+}
+
+/** Logical canvas geometry and the non-destructive source selection. */
+export interface Composition extends ImageSize {
+  /** Percentage selection; null draws the entire original image. */
+  crop: ImageCrop | null;
+}
+
+/** Public cumulative counters for website visits and completed exports. */
+export interface SiteStats {
+  /** Number of reported page loads, including refreshes. */
+  visits: number;
+  /** Number of completed download or clipboard export actions. */
+  exports: number;
+  /** ISO timestamp when this database started collecting events. */
+  startedAt: string;
+}
+
+/** Browser actions counted by the public statistics endpoint. */
+export type StatsEventKind = "page_view" | "export";
+
+/** Serializable typography with a 512-unit relative position on each axis. */
 export interface EditorSettings {
   /** Caption; newline characters create separate lines. */
   text: string;
-  /** Caption center on the horizontal axis. */
+  /** Caption center: 0 is the left edge and 512 is the right edge. */
   x: number;
-  /** Vertical center of the first caption line. */
+  /** First line center: 0 is the top edge and 512 is the bottom edge. */
   y: number;
   /** Font size in logical pixels. */
   fontSize: number;

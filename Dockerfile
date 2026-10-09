@@ -15,6 +15,8 @@ COPY public/studio ./public/studio
 COPY public/fonts ./public/fonts
 COPY ASSET_SOURCES.md THIRD_PARTY_NOTICES.md ./
 
+RUN mkdir -p /app/data && chown node:node /app/data
+
 USER node
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

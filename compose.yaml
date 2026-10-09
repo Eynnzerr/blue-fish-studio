@@ -14,3 +14,11 @@ services:
       PORT: "8787"
       MAX_CONCURRENT_RENDERS: ${MAX_CONCURRENT_RENDERS:-2}
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-60}
+      STATS_DB_PATH: /app/data/stats.sqlite
+      STATS_ALLOWED_ORIGINS: ${STATS_ALLOWED_ORIGINS:-http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174,http://localhost:5174}
+      STATS_RATE_LIMIT_PER_MINUTE: ${STATS_RATE_LIMIT_PER_MINUTE:-120}
+    volumes:
+      - stats-data:/app/data
+
+volumes:
+  stats-data:

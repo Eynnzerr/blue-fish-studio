@@ -1,7 +1,31 @@
-import type { EditorSettings } from "../types";
+import type { Composition, EditorSettings, ImageSize } from "../types";
 
 /** Logical image dimensions shared by preview, browser export, and server rendering. */
 export const CANVAS_SIZE = 512;
+
+/** Default square geometry also used by the HTTP renderer. */
+export const DEFAULT_COMPOSITION: Composition = {
+  width: CANVAS_SIZE,
+  height: CANVAS_SIZE,
+  crop: null,
+};
+
+/** Fit an aspect ratio to a requested integer longest edge. */
+export function sizeFromLongestEdge(
+  aspect: number,
+  longestEdge: number,
+): ImageSize {
+  return {
+    width: Math.max(
+      1,
+      Math.round(aspect >= 1 ? longestEdge : longestEdge * aspect),
+    ),
+    height: Math.max(
+      1,
+      Math.round(aspect >= 1 ? longestEdge / aspect : longestEdge),
+    ),
+  };
+}
 
 /** Canvas operations shared by browser and native drawing contexts. */
 export interface StickerDrawingContext<TImage> {
@@ -19,7 +43,12 @@ export interface StickerDrawingContext<TImage> {
   textAlign: "left" | "right" | "center" | "start" | "end";
   /** Vertical text anchoring relative to its drawing position. */
   textBaseline:
-    "top" | "hanging" | "middle" | "alphabetic" | "ideographic" | "bottom";
+    | "top"
+    | "hanging"
+    | "middle"
+    | "alphabetic"
+    | "ideographic"
+    | "bottom";
   /** Shape used where outline segments meet. */
   lineJoin: "round" | "bevel" | "miter";
   /** Shape used at outline endpoints. */
@@ -38,9 +67,13 @@ export interface StickerDrawingContext<TImage> {
   rotate(angle: number): void;
   /** Paint a rectangle using the current fill style. */
   fillRect(x: number, y: number, width: number, height: number): void;
-  /** Fit source artwork into the supplied destination rectangle. */
+  /** Draw a source selection into the supplied destination rectangle. */
   drawImage(
     image: TImage,
+    sourceX: number,
+    sourceY: number,
+    sourceWidth: number,
+    sourceHeight: number,
     x: number,
     y: number,
     width: number,
@@ -123,13 +156,14 @@ function paintCaption<TImage>(
 }
 
 /**
- * Draws a sticker onto a fresh context sized to `CANVAS_SIZE * scale` on each axis.
+ * Draws the selected source region and editable caption onto a fresh canvas.
  * @param context Browser or native canvas context with its initial transform.
  * @param image Decoded artwork, or null to render only the caption and background.
  * @param imageWidth Natural source-image width; unused when image is null.
  * @param imageHeight Natural source-image height; unused when image is null.
- * @param settings Caption and layout values in 512 × 512 logical coordinates.
+ * @param settings Typography and relative caption positions on 512-unit axes.
  * @param scale Output-resolution multiplier that preserves logical placement.
+ * @param composition Logical dimensions and percentage source selection.
  */
 export function drawSticker<TImage>(
   context: StickerDrawingContext<TImage>,
@@ -138,25 +172,40 @@ export function drawSticker<TImage>(
   imageHeight: number,
   settings: EditorSettings,
   scale = 1,
+  composition: Composition = DEFAULT_COMPOSITION,
 ): void {
+  const { width: canvasWidth, height: canvasHeight, crop } = composition;
   context.scale(scale, scale);
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
   if (settings.background === "white") {
     context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+    context.fillRect(0, 0, canvasWidth, canvasHeight);
   }
 
   if (image) {
     const box =
       settings.layout === "caption"
-        ? { x: 16, y: 124, width: 480, height: 372 }
-        : { x: 0, y: 0, width: CANVAS_SIZE, height: CANVAS_SIZE };
-    const ratio = Math.min(box.width / imageWidth, box.height / imageHeight);
-    const width = imageWidth * ratio;
-    const height = imageHeight * ratio;
+        ? {
+            x: canvasWidth * (16 / CANVAS_SIZE),
+            y: canvasHeight * (124 / CANVAS_SIZE),
+            width: canvasWidth * (480 / CANVAS_SIZE),
+            height: canvasHeight * (372 / CANVAS_SIZE),
+          }
+        : { x: 0, y: 0, width: canvasWidth, height: canvasHeight };
+    const sourceX = (imageWidth * (crop?.x ?? 0)) / 100;
+    const sourceY = (imageHeight * (crop?.y ?? 0)) / 100;
+    const sourceWidth = (imageWidth * (crop?.width ?? 100)) / 100;
+    const sourceHeight = (imageHeight * (crop?.height ?? 100)) / 100;
+    const ratio = Math.min(box.width / sourceWidth, box.height / sourceHeight);
+    const width = sourceWidth * ratio;
+    const height = sourceHeight * ratio;
     context.drawImage(
       image,
+      sourceX,
+      sourceY,
+      sourceWidth,
+      sourceHeight,
       box.x + (box.width - width) / 2,
       box.y + (box.height - height) / 2,
       width,
@@ -165,7 +214,11 @@ export function drawSticker<TImage>(
   }
 
   context.save();
-  context.translate(settings.x, settings.y);
+  // Each position axis spans the full canvas, preserving placement when its ratio changes.
+  context.translate(
+    (settings.x / CANVAS_SIZE) * canvasWidth,
+    (settings.y / CANVAS_SIZE) * canvasHeight,
+  );
   context.rotate((settings.rotation * Math.PI) / 180);
   context.font = `${settings.fontSize}px ${settings.fontFamily}`;
   context.textAlign = "center";

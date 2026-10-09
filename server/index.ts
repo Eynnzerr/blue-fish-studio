@@ -12,6 +12,7 @@ import { BUILTIN_FONTS, DEFAULT_SETTINGS } from "../src/lib/defaults.ts";
 import { CANVAS_SIZE, drawSticker } from "../src/lib/render.ts";
 import type { EditorSettings, Sticker } from "../src/types.ts";
 import { renderCatalogPreview } from "./catalog-preview.ts";
+import { StatsStore } from "./stats.ts";
 
 /** Maximum size of a render or catalog preview request before JSON decoding. */
 const MAX_BODY_BYTES = 8 * 1024;
@@ -325,7 +326,8 @@ function validatePreview(
   }
   return values.stickerIds.map((id: string) => {
     const sticker = catalog.get(id);
-    if (!sticker) throw new ApiError(404, "STICKER_NOT_FOUND", "未找到指定素材");
+    if (!sticker)
+      throw new ApiError(404, "STICKER_NOT_FOUND", "未找到指定素材");
     return sticker;
   });
 }
@@ -377,16 +379,32 @@ async function main(): Promise<void> {
   const port = integerSetting("PORT", 8787, 65_535);
   const maxConcurrent = integerSetting("MAX_CONCURRENT_RENDERS", 2);
   const rateLimit = integerSetting("RATE_LIMIT_PER_MINUTE", 60);
+  const statsRateLimit = integerSetting("STATS_RATE_LIMIT_PER_MINUTE", 120);
+  const statsOrigins = new Set(
+    (
+      process.env.STATS_ALLOWED_ORIGINS ??
+      "http://127.0.0.1:5173,http://localhost:5173,http://127.0.0.1:5174,http://localhost:5174"
+    )
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+      .map((origin) => new URL(origin).origin),
+  );
   const publicRoot = await realpath(
     fileURLToPath(new URL("../public/", import.meta.url)),
   );
   const fonts = registerFonts(publicRoot);
   const catalog = await loadCatalog(publicRoot);
+  const statsStore = new StatsStore(
+    resolve(process.env.STATS_DB_PATH || "data/stats.sqlite"),
+  );
   const expectedAuthorization = Buffer.from(`Bearer ${apiKey}`);
   let activeRenders = 0;
   let rendersInWindow = 0;
   let windowStartedAt = Date.now();
   let closing = false;
+  const statsRequests = new Map<string, number>();
+  let statsWindowStartedAt = Date.now();
 
   /** Authenticate and dispatch a request without accepting image URLs or file paths. */
   async function handleRequest(
@@ -403,6 +421,93 @@ async function main(): Promise<void> {
       sendJson(response, 200, { status: "ok" });
       return;
     }
+    if (closing) throw new ApiError(503, "SHUTTING_DOWN", "服务正在关闭");
+    if (path === "/api/v1/stats" || path === "/api/v1/stats/events") {
+      const origin = request.headers.origin;
+      response.setHeader("Vary", "Origin");
+      if (
+        (origin && !statsOrigins.has(origin)) ||
+        (request.method !== "GET" && !origin)
+      ) {
+        throw new ApiError(403, "ORIGIN_NOT_ALLOWED", "当前网站未启用统计上报");
+      }
+      if (origin) response.setHeader("Access-Control-Allow-Origin", origin);
+      if (request.method === "OPTIONS") {
+        response.writeHead(204, {
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "600",
+        });
+        response.end();
+        return;
+      }
+      const now = Date.now();
+      if (now - statsWindowStartedAt >= RATE_WINDOW_MS) {
+        statsWindowStartedAt = now;
+        statsRequests.clear();
+      }
+      // Use the direct peer address; forwarding headers require a trusted proxy configuration.
+      const address = request.socket.remoteAddress ?? "unknown";
+      const count = statsRequests.get(address) ?? 0;
+      if (count >= statsRateLimit) {
+        response.setHeader(
+          "Retry-After",
+          String(
+            Math.ceil((statsWindowStartedAt + RATE_WINDOW_MS - now) / 1000),
+          ),
+        );
+        throw new ApiError(
+          429,
+          "STATS_RATE_LIMITED",
+          "统计请求过于频繁，请稍后重试",
+        );
+      }
+      statsRequests.set(address, count + 1);
+      if (request.method === "GET" && path === "/api/v1/stats") {
+        sendJson(response, 200, statsStore.read());
+        return;
+      }
+      if (request.method !== "POST" || path !== "/api/v1/stats/events") {
+        throw new ApiError(
+          405,
+          "METHOD_NOT_ALLOWED",
+          "统计接口不支持此请求方式",
+        );
+      }
+      const payload = await readJson(request);
+      if (
+        typeof payload !== "object" ||
+        payload === null ||
+        Array.isArray(payload)
+      ) {
+        throw new ApiError(
+          400,
+          "INVALID_STATS_EVENT",
+          "统计事件必须是 JSON 对象",
+        );
+      }
+      const event = payload as Record<string, unknown>;
+      if (
+        Object.keys(event).some((key) => key !== "id" && key !== "kind") ||
+        typeof event.id !== "string" ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          event.id,
+        ) ||
+        (event.kind !== "page_view" && event.kind !== "export")
+      ) {
+        throw new ApiError(
+          400,
+          "INVALID_STATS_EVENT",
+          "需要 UUID 事件 ID 与 page_view 或 export 类型",
+        );
+      }
+      sendJson(
+        response,
+        200,
+        statsStore.record(event.id.toLowerCase(), event.kind),
+      );
+      return;
+    }
     const authorization = Buffer.from(request.headers.authorization ?? "");
     if (
       authorization.length !== expectedAuthorization.length ||
@@ -410,7 +515,6 @@ async function main(): Promise<void> {
     ) {
       throw new ApiError(401, "UNAUTHORIZED", "需要有效的 Bearer API Key");
     }
-    if (closing) throw new ApiError(503, "SHUTTING_DOWN", "图片服务正在关闭");
     if (request.method === "GET" && path === "/api/v1/stickers") {
       sendJson(response, 200, {
         stickers: Array.from(
@@ -494,7 +598,10 @@ async function main(): Promise<void> {
       SHUTDOWN_GRACE_MS,
     );
     timer.unref();
-    server.close(() => clearTimeout(timer));
+    server.close(() => {
+      clearTimeout(timer);
+      statsStore.close();
+    });
   }
 
   await new Promise<void>((resolveListening, reject) => {

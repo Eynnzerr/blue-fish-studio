@@ -1,0 +1,120 @@
+.crop-dialog {
+  width: min(760px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 90px rgb(0 0 0 / 22%);
+  overflow: hidden;
+}
+.crop-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+.crop-dialog::backdrop {
+  background: rgb(16 30 49 / 50%);
+}
+.crop-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px;
+}
+.crop-heading h2 {
+  font-size: 21px;
+}
+.crop-heading p,
+.crop-hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.crop-heading > button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.crop-body {
+  padding: 0 24px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.crop-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.crop-controls label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.crop-controls select {
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--text);
+}
+.crop-image-stage {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  background: var(--surface-container);
+  border-radius: 14px;
+}
+.crop-image-stage img {
+  display: block;
+  max-width: 100%;
+  max-height: min(52dvh, 480px);
+  width: auto;
+  height: auto;
+  background-image: var(--checker);
+}
+.crop-image-stage .ReactCrop {
+  flex-shrink: 1;
+}
+.crop-image-stage .ReactCrop__crop-selection {
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crop-image-stage .ReactCrop__crop-selection {
+    animation: none;
+  }
+}
+.crop-hint {
+  margin-top: 12px;
+}
+.crop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 24px 22px;
+}
+.crop-heading,
+.crop-actions {
+  flex-shrink: 0;
+}
+@media (max-width: 520px) {
+  .crop-heading {
+    padding: 18px 16px;
+    gap: 10px;
+  }
+  .crop-body {
+    padding: 0 16px;
+  }
+  .crop-actions {
+    padding: 16px;
+  }
+  .crop-controls select {
+    font-size: 16px;
+  }
+  .crop-image-stage {
+    padding: 10px;
+  }
+}

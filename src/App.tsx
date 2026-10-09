@@ -1,7 +1,7 @@
 import {
   Check,
-  ChevronDown,
   Copy,
+  Crop,
   Download,
   ExternalLink,
   Eye,
@@ -17,10 +17,14 @@ import {
   Type,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import Gallery from "./components/Gallery";
 import Editor from "./components/Editor";
 import GenerationDialog from "./components/GenerationDialog";
+import CropDialog from "./components/CropDialog";
+import ExportOptions from "./components/ExportOptions";
+import SiteStats from "./components/SiteStats";
+import { useSiteStats } from "./lib/site-stats";
 import { StickerCanvas } from "./components/StickerCanvas";
 import {
   BUILTIN_FONTS,
@@ -28,7 +32,18 @@ import {
   SYSTEM_FONT_FAMILY,
 } from "./lib/defaults";
 import { canvasToBlob, renderSticker } from "./lib/canvas";
-import type { EditorSettings, FontOption, Sticker } from "./types";
+import { CANVAS_SIZE, sizeFromLongestEdge } from "./lib/render";
+import type {
+  Composition,
+  EditorSettings,
+  FontOption,
+  ImageCrop,
+  ImageSize,
+  Sticker,
+} from "./types";
+
+/** Source of the final canvas aspect ratio. */
+type CanvasMode = "square" | "image" | "custom";
 
 /** Resolve a bundled URL for root and subdirectory deployments alike. */
 function assetUrl(path: string) {
@@ -69,6 +84,7 @@ function jumpToPanel(panel: "preview" | "gallery" | "editor") {
 
 /** Complete local-first sticker workshop. */
 export default function App() {
+  const siteStats = useSiteStats();
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [personalStickers, setPersonalStickers] = useState<Sticker[]>([]);
   const [generationOpen, setGenerationOpen] = useState(false);
@@ -83,7 +99,16 @@ export default function App() {
   const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
-  const [exportScale, setExportScale] = useState(2);
+  const [crops, setCrops] = useState<Record<string, ImageCrop>>({});
+  const [cropOpen, setCropOpen] = useState(false);
+  const [canvasMode, setCanvasMode] = useState<CanvasMode>("square");
+  const [exportPreset, setExportPreset] = useState<number | null>(1024);
+  const [customSize, setCustomSize] = useState<ImageSize>({
+    width: 1024,
+    height: 1024,
+  });
+  const [sizeLocked, setSizeLocked] = useState(true);
+  const [sizeValid, setSizeValid] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [dark, setDark] = useState(
     () => window.matchMedia("(prefers-color-scheme: dark)").matches,
@@ -95,6 +120,33 @@ export default function App() {
   const mounted = useRef(true);
   const imageSelection = useRef(0);
   const fontSelection = useRef(0);
+  const crop = selected ? (crops[selected.id] ?? null) : null;
+  const sourceWidth = image?.naturalWidth ?? selected?.width ?? CANVAS_SIZE;
+  const sourceHeight = image?.naturalHeight ?? selected?.height ?? CANVAS_SIZE;
+  const imageAspect =
+    (sourceWidth * (crop?.width ?? 100)) /
+    (sourceHeight * (crop?.height ?? 100));
+  const aspect =
+    canvasMode === "square"
+      ? 1
+      : canvasMode === "image"
+        ? imageAspect
+        : customSize.width / customSize.height;
+  const composition = useMemo<Composition>(
+    () => ({
+      width: aspect >= 1 ? CANVAS_SIZE : CANVAS_SIZE * aspect,
+      height: aspect >= 1 ? CANVAS_SIZE / aspect : CANVAS_SIZE,
+      crop,
+    }),
+    [aspect, crop],
+  );
+  const outputSize =
+    exportPreset === null && canvasMode === "custom"
+      ? customSize
+      : sizeFromLongestEdge(
+          aspect,
+          exportPreset ?? Math.max(customSize.width, customSize.height),
+        );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -210,6 +262,40 @@ export default function App() {
     setToast("已恢复初始排版");
   }
 
+  /** Apply a per-image crop without changing the source or the editable caption. */
+  function applyCrop(nextCrop: ImageCrop | null): void {
+    if (!selected) return;
+    setCrops((previous) => {
+      const next = { ...previous };
+      if (nextCrop) next[selected.id] = nextCrop;
+      else delete next[selected.id];
+      return next;
+    });
+    setCropOpen(false);
+  }
+
+  /** Select a canvas aspect source, initializing free dimensions from the current output. */
+  function changeCanvasMode(mode: CanvasMode): void {
+    setCanvasMode(mode);
+    setSizeLocked(mode !== "custom");
+    if (mode === "custom") {
+      setCustomSize(outputSize);
+      setExportPreset(null);
+    }
+  }
+
+  /** Start custom editing from the currently displayed PNG dimensions. */
+  function changeExportPreset(preset: number | null): void {
+    if (preset === null) setCustomSize(outputSize);
+    setExportPreset(preset);
+  }
+
+  /** Free dimensions change the canvas shape; locked dimensions change resolution only. */
+  function changeOutputSize(size: ImageSize): void {
+    setCustomSize(size);
+    if (!sizeLocked) setCanvasMode("custom");
+  }
+
   /** Decode a personal image and retain its Blob URL for this browser session. */
   async function addPersonalImage(
     blob: Blob,
@@ -293,9 +379,10 @@ export default function App() {
   /** Capture the current composition at the selected PNG output resolution. */
   async function createPng() {
     if (!image || !fontReady) throw new Error("底图和字体仍在加载");
+    if (!sizeValid) throw new Error("请填写有效的导出尺寸");
     const output = document.createElement("canvas");
     // Draw synchronously to preserve the exact composition at the moment of the click.
-    renderSticker(output, image, settings, exportScale);
+    renderSticker(output, image, settings, composition, outputSize);
     return canvasToBlob(output);
   }
 
@@ -309,6 +396,7 @@ export default function App() {
       link.href = url;
       link.download = `大肥鱼-${selected?.name.replace(/\.[^.]+$/, "") || "表情包"}.png`;
       link.click();
+      siteStats.recordExport();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       setToast("表情包已下载，去分享你的心情吧");
     } catch {
@@ -330,6 +418,7 @@ export default function App() {
       await navigator.clipboard.write([
         new ClipboardItem({ "image/png": createPng() }),
       ]);
+      siteStats.recordExport();
       setToast("已复制图片，粘贴到聊天框试试");
     } catch {
       setToast("浏览器未允许复制图片，请使用下载 PNG");
@@ -438,12 +527,45 @@ export default function App() {
                   叠加文字
                 </button>
               </div>
-              <span className="canvas-dimensions">512 × 512</span>
+              <button
+                className="text-button crop-button"
+                disabled={!image || imageLoading}
+                onClick={() => setCropOpen(true)}
+              >
+                <Crop size={16} />
+                {crop ? "重新裁剪" : "裁剪底图"}
+              </button>
             </div>
-            <div className="canvas-stage">
+            <div className="canvas-ratio-row">
+              <label htmlFor="canvas-ratio">画布比例</label>
+              <select
+                id="canvas-ratio"
+                value={canvasMode}
+                onChange={(event) =>
+                  changeCanvasMode(event.target.value as CanvasMode)
+                }
+              >
+                <option value="square">正方形</option>
+                <option value="image">跟随底图 / 裁剪比例</option>
+                <option value="custom">自定义宽高</option>
+              </select>
+              {crop && (
+                <button className="text-button" onClick={() => applyCrop(null)}>
+                  恢复底图
+                </button>
+              )}
+            </div>
+            <div
+              className="canvas-stage"
+              style={{
+                aspectRatio: aspect,
+                maxWidth: Math.min(512, 512 * aspect),
+              }}
+            >
               <StickerCanvas
                 image={ready ? image : null}
                 settings={settings}
+                composition={composition}
                 onPositionChange={(x, y) => updateSettings({ x, y })}
                 canvasRef={canvasRef}
                 loading={imageLoading || !fontReady || !selected}
@@ -518,25 +640,21 @@ export default function App() {
                   白色
                 </button>
               </div>
-              <label className="export-size">
-                <select
-                  aria-label="导出分辨率"
-                  value={exportScale}
-                  onChange={(event) =>
-                    setExportScale(Number(event.target.value))
-                  }
-                >
-                  <option value={1}>512 px · 标准</option>
-                  <option value={2}>1024 px · 高清</option>
-                  <option value={3}>1536 px · 超清</option>
-                </select>
-                <ChevronDown size={14} />
-              </label>
             </div>
+            <ExportOptions
+              size={outputSize}
+              preset={exportPreset}
+              locked={sizeLocked}
+              aspect={aspect}
+              onPresetChange={changeExportPreset}
+              onLockedChange={setSizeLocked}
+              onSizeChange={changeOutputSize}
+              onValidityChange={setSizeValid}
+            />
             <div className="export-actions">
               <button
                 className="button button-outlined"
-                disabled={!ready || exporting}
+                disabled={!ready || exporting || !sizeValid}
                 onClick={() => void copy()}
               >
                 <Copy size={18} />
@@ -544,12 +662,11 @@ export default function App() {
               </button>
               <button
                 className="button button-primary"
-                disabled={!ready || exporting}
+                disabled={!ready || exporting || !sizeValid}
                 onClick={() => void download()}
               >
                 <Download size={19} />
                 {exporting ? "正在生成…" : "下载 PNG"}
-                <span className="button-detail">{exportScale}×</span>
               </button>
             </div>
             <p className="local-note">
@@ -580,11 +697,17 @@ export default function App() {
           写文案
         </button>
       </nav>
-      <footer className="app-footer">
+      <footer className={`app-footer${siteStats.enabled ? " has-stats" : ""}`}>
         <span>
           <Fish size={16} />
           让每一天，都有一点鱼的快乐。
         </span>
+        {siteStats.enabled && (
+          <SiteStats
+            stats={siteStats.stats}
+            unavailable={siteStats.unavailable}
+          />
+        )}
         <div>
           <a
             href="https://github.com/EDMOK/blue-fish-archive"
@@ -611,6 +734,15 @@ export default function App() {
         onClose={() => setGenerationOpen(false)}
         onUse={useGeneratedImage}
       />
+      {cropOpen && image && (
+        <CropDialog
+          key={selected?.id}
+          image={image}
+          crop={crop}
+          onApply={applyCrop}
+          onClose={() => setCropOpen(false)}
+        />
+      )}
       <dialog
         ref={aboutRef}
         className="about-dialog"
