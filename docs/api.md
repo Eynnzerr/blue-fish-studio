@@ -2,7 +2,15 @@
 
 通过 HTTP 提交底图 ID、文案和样式，服务返回一张 1024 × 1024 PNG。图片在服务端合成后直接响应，不保存生成结果。适合由 AstrBot 等程序调用，将返回的图片字节发送到聊天中。
 
-## 启动
+## 公共入口配置示例
+
+本文以 **`https://eynnzerr.cloud/blue-fish`** 作为公共入口的部署目标，当前尚未开放。服务器资源调整、域名备案与公网验证完成后，调用方无需 API Key，AstrBot 插件对应的 API Key 留空。当前使用请按下节部署自己的服务。
+
+示例配置按出口 IP 限制为每分钟 20 次请求，允许少量突发请求；同一台 AstrBot 的多个群共享出口 IP 额度。目录预览与成品图片另共用全服务每分钟 60 次、同时渲染 1 张的上限。达到限制时会返回 `429` 或 `503`，稍后重试。
+
+以下接口示例使用这一目标地址。自建服务通过 `Authorization: Bearer <API_KEY>` 认证，部署方式见下节；现有域名与 Nginx 的接入步骤见 [云服务器部署](cloud-deployment.md)。
+
+## 自建服务
 
 在项目根目录使用 Node.js 22.13+（统计持久化使用内置 `node:sqlite`）：
 
@@ -55,7 +63,7 @@ API_KEY='replace-with-your-key' npm run smoke:api
 
 ## 接口
 
-图片与素材接口要求请求头 `Authorization: Bearer <API_KEY>`。健康检查和统计接口无需此密钥，统计接口的 Origin 校验与请求说明见 [全站统计](statistics.md)。
+下表路径相对于服务 URL。公共入口无需认证；直接调用自建服务时，图片与素材接口要求请求头 `Authorization: Bearer <API_KEY>`。健康检查和统计接口无需此密钥，统计接口的 Origin 校验与请求说明见 [全站统计](statistics.md)。
 
 | 方法与路径 | 返回内容 |
 | --- | --- |
@@ -67,20 +75,16 @@ API_KEY='replace-with-your-key' npm run smoke:api
 | `GET /api/v1/fonts` | JSON：`{ "fonts": [...] }`，每项包含 `id`、`name` |
 | `POST /api/v1/render` | `image/png` 二进制图片 |
 
-在另一终端设置与服务一致的密钥，即可查询素材和字体：
+查询公共服务的健康状态、素材和字体：
 
 ```sh
-export API_KEY='replace-with-your-key'
-
-curl --fail --silent --show-error http://127.0.0.1:8787/healthz
+curl --fail --silent --show-error https://eynnzerr.cloud/blue-fish/healthz
 
 curl --fail --silent --show-error \
-  -H "Authorization: Bearer $API_KEY" \
-  http://127.0.0.1:8787/api/v1/stickers
+  https://eynnzerr.cloud/blue-fish/api/v1/stickers
 
 curl --fail --silent --show-error \
-  -H "Authorization: Bearer $API_KEY" \
-  http://127.0.0.1:8787/api/v1/fonts
+  https://eynnzerr.cloud/blue-fish/api/v1/fonts
 ```
 
 ### 素材缩略图目录
@@ -89,16 +93,15 @@ curl --fail --silent --show-error \
 
 ```sh
 curl --fail --silent --show-error \
-  -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   --data '{"stickerIds":["studio-design-cheer","studio-design-bright-idea"]}' \
   --output catalog.png \
-  http://127.0.0.1:8787/api/v1/stickers/preview
+  https://eynnzerr.cloud/blue-fish/api/v1/stickers/preview
 ```
 
 服务按请求数组的顺序为素材标注 **1 至 8**，并显示完整缩略图、名称及“档案馆”或“工坊”来源。目录采用两列布局，宽度固定为 960 像素；1–2、3–4、5–6、7–8 项分别输出 684、1168、1652、2136 像素高的 PNG。透明素材使用浅色棋盘格衬底。
 
-调用方负责保存编号与底图 ID 的映射；生成表情时仍向 `/api/v1/render` 提交实际 `stickerId`。预览接口与生成接口共用 Bearer 鉴权、每分钟渲染限流和同时渲染数量上限。
+调用方负责保存编号与底图 ID 的映射；生成表情时仍向 `/api/v1/render` 提交实际 `stickerId`。预览接口与生成接口共用每分钟渲染限流和同时渲染数量上限；自建服务还要求 Bearer 鉴权。
 
 ### 生成图片
 
@@ -124,7 +127,6 @@ curl --fail --silent --show-error \
 
 ```sh
 curl --fail --silent --show-error \
-  -H "Authorization: Bearer $API_KEY" \
   -H 'Content-Type: application/json' \
   --data '{
     "stickerId": "studio-design-cheer",
@@ -135,7 +137,7 @@ curl --fail --silent --show-error \
     "layout": "caption"
   }' \
   --output sticker.png \
-  http://127.0.0.1:8787/api/v1/render
+  https://eynnzerr.cloud/blue-fish/api/v1/render
 ```
 
 长文案按给定位置绘制，不自动缩小字号或换行，可通过 `\n` 手动分行。透明画布保留底图原有的白色像素；GIF 使用首帧，输出统一为静态 PNG。
@@ -147,11 +149,11 @@ curl --fail --silent --show-error \
 | HTTP 状态 | 含义 |
 | --- | --- |
 | `400` | JSON 或参数无效，包括未知字段 |
-| `401` | 缺少或使用了错误的 Bearer 密钥 |
+| `401` | 自建服务缺少或使用了错误的 Bearer 密钥 |
 | `404` | 接口或底图不存在 |
 | `413` | 请求正文超过 8 KiB |
 | `415` | 请求正文不是 `application/json` |
-| `429` | 达到全服务每分钟渲染频率上限 |
+| `429` | 达到公共入口的 IP 频率限制或全服务每分钟渲染频率上限 |
 | `503` | 达到同时渲染数量上限 |
 | `500` | 图片加载或渲染失败 |
 
@@ -160,26 +162,26 @@ curl --fail --silent --show-error \
 使用 `httpx` 异步获取 PNG 字节，便于接入机器人的消息处理流程：
 
 ```python
-import os
-
 import httpx
 
 
 async def render_sticker(
-    text: str, base_url: str = "http://127.0.0.1:8787"
+    text: str,
+    base_url: str = "https://eynnzerr.cloud/blue-fish",
+    api_key: str = "",
 ) -> bytes:
     """Render a sticker and return PNG bytes for a bot message."""
     async with httpx.AsyncClient(timeout=15) as client:
         response = await client.post(
-            f"{base_url}/api/v1/render",
-            headers={"Authorization": f"Bearer {os.environ['API_KEY']}"},
+            f"{base_url.rstrip('/')}/api/v1/render",
+            headers={"Authorization": f"Bearer {api_key}"} if api_key else {},
             json={"stickerId": "studio-design-cheer", "text": text},
         )
         response.raise_for_status()
         return response.content
 ```
 
-后续 AstrBot 插件可将返回的 `bytes` 交给图片消息组件。示例地址适用于同一主机网络；容器中的 AstrBot 需要使用能访问到该服务的地址。
+[肥鱼工坊 AstrBot 插件](https://github.com/Eynnzerr/astrbot_plugin_blue_fish) 将返回的 PNG 字节发送到聊天中。调用自建服务时，把 `base_url` 和 `api_key` 换成该服务的地址与密钥。
 
 ## 更新服务
 

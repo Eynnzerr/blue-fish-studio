@@ -7,7 +7,6 @@ import {
   Eye,
   Fish,
   Github,
-  Heart,
   ImagePlus,
   Info,
   Moon,
@@ -490,10 +489,6 @@ export default function App() {
               <Sparkles className="headline-sparkle" size={28} />
             </h1>
             <p>大肥鱼已就位，今天配什么词？</p>
-          </div>
-          <div className="intro-note">
-            <Heart size={16} />
-            表情加工中
           </div>
         </section>
         <div className="workspace">
