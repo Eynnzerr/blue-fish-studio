@@ -37,7 +37,7 @@ async function checkError(name, options, status, path = "/api/v1/render") {
   checks.push({ name, status });
 }
 
-/** Build a render request without altering the caller's parameter object. */
+/** Build an authenticated JSON image request without altering the caller's parameters. */
 function renderRequest(body) {
   return {
     method: "POST",
@@ -115,6 +115,31 @@ async function checkRender(name, parameters, background = "transparent") {
   return png;
 }
 
+/** Verify a real catalog PNG's dimensions and save it for visual inspection. */
+async function checkPreview(name, stickerIds, expectedHeight) {
+  const response = await request(
+    "/api/v1/stickers/preview",
+    renderRequest({ stickerIds }),
+    200,
+  );
+  assert.match(response.headers.get("content-type"), /^image\/png/);
+  const png = Buffer.from(await response.arrayBuffer());
+  assert.equal(png.subarray(0, 8).toString("hex"), "89504e470d0a1a0a");
+  const image = await loadImage(png);
+  assert.equal(image.width, 960);
+  assert.equal(image.height, expectedHeight);
+  await writeFile(resolve(outputDirectory, `${name}.png`), png);
+  checks.push({
+    name,
+    status: 200,
+    items: stickerIds.length,
+    width: image.width,
+    height: image.height,
+    bytes: png.length,
+    sha256: createHash("sha256").update(png).digest("hex"),
+  });
+}
+
 await mkdir(outputDirectory, { recursive: true });
 await request("/healthz", {}, 200);
 checks.push({ name: "health", status: 200 });
@@ -189,6 +214,54 @@ await checkRender("studio", {
   stickerId: studio.id,
   text: "好耶！\n今天也开心",
 });
+
+/** A mixed collection exercises both source labels and several complete preview rows. */
+const previewIds = [
+  studio.id,
+  portrait.id,
+  ...stickers
+    .filter((item) => item.id !== studio.id && item.id !== portrait.id)
+    .slice(0, 6)
+    .map((item) => item.id),
+];
+assert.equal(previewIds.length, 8);
+await checkPreview("preview-one", previewIds.slice(0, 1), 684);
+await checkPreview("preview-three", previewIds.slice(0, 3), 1168);
+await checkPreview("preview-eight", previewIds, 2136);
+await checkError(
+  "preview-missing-key",
+  {
+    ...renderRequest({ stickerIds: previewIds }),
+    headers: { "Content-Type": "application/json" },
+  },
+  401,
+  "/api/v1/stickers/preview",
+);
+await checkError(
+  "preview-wrong-key",
+  {
+    ...renderRequest({ stickerIds: previewIds }),
+    headers: {
+      Authorization: "Bearer incorrect-smoke-check-key",
+      "Content-Type": "application/json",
+    },
+  },
+  401,
+  "/api/v1/stickers/preview",
+);
+for (const [name, parameters, status] of [
+  ["preview-empty", { stickerIds: [] }, 400],
+  ["preview-too-many", { stickerIds: [...previewIds, portrait.id] }, 400],
+  ["preview-missing-sticker", { stickerIds: ["missing-sticker"] }, 404],
+  ["preview-unknown-field", { stickerIds: previewIds, columns: 3 }, 400],
+]) {
+  await checkError(
+    name,
+    renderRequest(parameters),
+    status,
+    "/api/v1/stickers/preview",
+  );
+}
 
 for (const [name, changes, status] of [
   ["missing-sticker", { stickerId: "missing-sticker" }, 404],

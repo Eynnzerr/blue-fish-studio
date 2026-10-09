@@ -58,6 +58,7 @@ API_KEY='replace-with-your-key' npm run smoke:api
 | --- | --- |
 | `GET /healthz` | 服务健康状态，无需认证 |
 | `GET /api/v1/stickers` | JSON：`{ "stickers": [...] }`，每项包含 `id`、`name`、`origin`、`tags`、`animated`、`featured` |
+| `POST /api/v1/stickers/preview` | `image/png`：带编号的素材缩略图目录 |
 | `GET /api/v1/fonts` | JSON：`{ "fonts": [...] }`，每项包含 `id`、`name` |
 | `POST /api/v1/render` | `image/png` 二进制图片 |
 
@@ -76,6 +77,23 @@ curl --fail --silent --show-error \
   -H "Authorization: Bearer $API_KEY" \
   http://127.0.0.1:8787/api/v1/fonts
 ```
+
+### 素材缩略图目录
+
+`POST /api/v1/stickers/preview` 接收 `Content-Type: application/json`，正文最大 8 KiB，仅接受必填字段 `stickerIds`。它必须是包含 **1 至 8 个已有底图 ID** 的数组；任意 ID 不存在时返回 `404`。
+
+```sh
+curl --fail --silent --show-error \
+  -H "Authorization: Bearer $API_KEY" \
+  -H 'Content-Type: application/json' \
+  --data '{"stickerIds":["studio-design-cheer","studio-design-bright-idea"]}' \
+  --output catalog.png \
+  http://127.0.0.1:8787/api/v1/stickers/preview
+```
+
+服务按请求数组的顺序为素材标注 **1 至 8**，并显示完整缩略图、名称及“档案馆”或“工坊”来源。目录采用两列布局，宽度固定为 960 像素；1–2、3–4、5–6、7–8 项分别输出 684、1168、1652、2136 像素高的 PNG。透明素材使用浅色棋盘格衬底。
+
+调用方负责保存编号与底图 ID 的映射；生成表情时仍向 `/api/v1/render` 提交实际 `stickerId`。预览接口与生成接口共用 Bearer 鉴权、每分钟渲染限流和同时渲染数量上限。
 
 ### 生成图片
 

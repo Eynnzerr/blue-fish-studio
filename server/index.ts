@@ -11,8 +11,9 @@ import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { BUILTIN_FONTS, DEFAULT_SETTINGS } from "../src/lib/defaults.ts";
 import { CANVAS_SIZE, drawSticker } from "../src/lib/render.ts";
 import type { EditorSettings, Sticker } from "../src/types.ts";
+import { renderCatalogPreview } from "./catalog-preview.ts";
 
-/** Maximum size of an incoming render request, measured before JSON decoding. */
+/** Maximum size of a render or catalog preview request before JSON decoding. */
 const MAX_BODY_BYTES = 8 * 1024;
 /** Duration of the shared render-rate counting window. */
 const RATE_WINDOW_MS = 60_000;
@@ -139,6 +140,7 @@ async function loadCatalog(publicRoot: string): Promise<Map<string, Sticker>> {
   const catalog = new Map<string, Sticker>();
   for (const sticker of manifests.flat()) {
     catalogPath(publicRoot, sticker.src);
+    catalogPath(publicRoot, sticker.preview);
     catalog.set(sticker.id, sticker);
   }
   return catalog;
@@ -293,6 +295,57 @@ function validateRender(
   };
 }
 
+/** Resolve one to eight catalog IDs in the exact order used for preview numbering. */
+function validatePreview(
+  payload: unknown,
+  catalog: Map<string, Sticker>,
+): Sticker[] {
+  if (
+    typeof payload !== "object" ||
+    payload === null ||
+    Array.isArray(payload)
+  ) {
+    throw new ApiError(400, "INVALID_PARAMETERS", "请求正文必须是 JSON 对象");
+  }
+  const values = payload as Record<string, unknown>;
+  if (Object.keys(values).some((key) => key !== "stickerIds")) {
+    throw new ApiError(400, "UNKNOWN_FIELD", "请求包含未支持的字段");
+  }
+  if (
+    !Array.isArray(values.stickerIds) ||
+    values.stickerIds.length < 1 ||
+    values.stickerIds.length > 8 ||
+    values.stickerIds.some((id) => typeof id !== "string" || !id.trim())
+  ) {
+    throw new ApiError(
+      400,
+      "INVALID_STICKER_IDS",
+      "stickerIds 必须包含 1 至 8 个非空素材 ID",
+    );
+  }
+  return values.stickerIds.map((id: string) => {
+    const sticker = catalog.get(id);
+    if (!sticker) throw new ApiError(404, "STICKER_NOT_FOUND", "未找到指定素材");
+    return sticker;
+  });
+}
+
+/** Load only catalog thumbnail files and compose their numbered preview in memory. */
+async function renderPreviewPng(
+  publicRoot: string,
+  stickers: Sticker[],
+): Promise<Buffer> {
+  const items = [];
+  // Decode sequentially so one preview request does not start eight file decoders at once.
+  for (const sticker of stickers) {
+    const path = await realpath(catalogPath(publicRoot, sticker.preview));
+    if (!path.startsWith(`${publicRoot}${sep}`))
+      throw new Error("Image path escapes the public directory");
+    items.push({ sticker, image: await loadImage(path) });
+  }
+  return renderCatalogPreview(items);
+}
+
 /** Decode one bundled image and render a 1024-square PNG entirely in memory. */
 async function renderPng(
   publicRoot: string,
@@ -380,10 +433,17 @@ async function main(): Promise<void> {
       });
       return;
     }
-    if (request.method !== "POST" || path !== "/api/v1/render") {
+    if (
+      request.method !== "POST" ||
+      (path !== "/api/v1/render" && path !== "/api/v1/stickers/preview")
+    ) {
       throw new ApiError(404, "NOT_FOUND", "接口不存在");
     }
-    const input = validateRender(await readJson(request), catalog, fonts);
+    const payload = await readJson(request);
+    const input =
+      path === "/api/v1/stickers/preview"
+        ? validatePreview(payload, catalog)
+        : validateRender(payload, catalog, fonts);
     const now = Date.now();
     if (now - windowStartedAt >= RATE_WINDOW_MS) {
       windowStartedAt = now;
@@ -403,7 +463,9 @@ async function main(): Promise<void> {
     rendersInWindow += 1;
     activeRenders += 1;
     try {
-      const png = await renderPng(publicRoot, input);
+      const png = Array.isArray(input)
+        ? await renderPreviewPng(publicRoot, input)
+        : await renderPng(publicRoot, input);
       if (!response.destroyed) {
         response.writeHead(200, {
           "Content-Type": "image/png",
