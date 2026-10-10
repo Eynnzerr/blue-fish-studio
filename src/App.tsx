@@ -959,6 +959,20 @@ export default function App() {
             致谢与来源
           </button>
         </div>
+        <a
+          className="icp-filing"
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src={`${import.meta.env.BASE_URL}miit-logo.svg`}
+            alt="工信部"
+            width={20}
+            height={20}
+          />
+          皖ICP备2022012668号-2
+        </a>
       </footer>
       <input
         ref={uploadRef}

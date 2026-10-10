@@ -1502,6 +1502,7 @@ select option {
   margin: 0 auto;
   padding: 26px 42px 32px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
@@ -1524,6 +1525,19 @@ select option {
   align-items: center;
   gap: 5px;
   color: var(--text-secondary);
+}
+.app-footer .icp-filing {
+  flex: 1 0 100%;
+  grid-column: 1 / -1;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.app-footer .icp-filing img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 .app-footer button {
   padding: 3px 0;

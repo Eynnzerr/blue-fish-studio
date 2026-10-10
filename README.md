@@ -8,7 +8,7 @@
 <p align="center">以 DeepSeek 鲸鱼娘为主角，在浏览器里选底图、写文案、制作表情包。</p>
 
 <p align="center">
-  <a href="https://eynnzerr.github.io/blue-fish-studio/"><strong>打开大肥鱼表情工坊 →</strong></a>
+  <a href="https://fish.eynnzerr.cloud/"><strong>打开大肥鱼表情工坊 →</strong></a>
 </p>
 
 ## 界面预览
@@ -72,7 +72,7 @@ npm run dev
 
 服务需支持同步的 [OpenAI Images API](https://developers.openai.com/api/reference/resources/images/methods/generate)，每次生成一张图，返回 `data[0].b64_json` 或 `data[0].url`。默认省略尺寸与背景参数，可按模型能力选择尺寸或透明输出；透明输出发送 `background: "transparent"` 和 `output_format: "png"`。Chat Completions、Responses 和异步任务接口属于其他协议。
 
-API Key 仅保存在当前页面内存中，刷新即清除。浏览器将提示词与 Key 直接发送到填写的服务，服务需允许当前网站来源的 CORS 请求；远程图片地址也需允许跨域下载，下载图片不携带 Key。公网接口使用 HTTPS，本机接口支持 HTTP。在线站点的来源为 `https://eynnzerr.github.io`。
+API Key 仅保存在当前页面内存中，刷新即清除。浏览器将提示词与 Key 直接发送到填写的服务，服务需允许当前网站来源的 CORS 请求；远程图片地址也需允许跨域下载，下载图片不携带 Key。公网接口使用 HTTPS，本机接口支持 HTTP。在线站点的来源为 `https://fish.eynnzerr.cloud`。
 
 预览满意后，点击「使用这张底图」加入「我的素材」继续配字，或直接下载底图。服务商按其规则计费；停止等待或关闭弹窗会中断浏览器请求，服务端可能已经开始生成。
 
