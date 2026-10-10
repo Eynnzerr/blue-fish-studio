@@ -37,7 +37,7 @@ const SOURCES: { id: GallerySource; label: string }[] = [
   { id: "personal", label: "我的素材" },
 ];
 
-/** Identify session-only images supplied or created by the current user. */
+/** Identify personal images supplied or created by the current user. */
 function isPersonalSticker(sticker: Sticker): boolean {
   return sticker.origin === "generated" || sticker.origin === "upload";
 }
@@ -240,7 +240,7 @@ export default function Gallery({
 
       {source === "personal" && (
         <p className="gallery-session-note">
-          我的素材仅在本次页面保留，刷新会清除；喜欢的作品记得下载。
+          当前草稿使用的底图会自动保存在本机，其余素材仅在本次页面保留。
         </p>
       )}
 

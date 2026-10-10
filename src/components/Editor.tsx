@@ -75,6 +75,8 @@ export default function Editor({
   /** Fonts registered in this session. */ fonts: FontOption[];
   /** Merge a partial settings update. */ onChange: (
     patch: Partial<EditorSettings>,
+    /** Nearby keystrokes or numeric edits that should share one history step. */
+    group?: string,
   ) => void;
   /** Register an uploaded font locally. */ onFontUpload: (
     file: File,
@@ -128,7 +130,7 @@ export default function Editor({
           maxLength={200}
           placeholder="这次让鱼说点什么？"
           value={settings.text}
-          onChange={(event) => onChange({ text: event.target.value })}
+          onChange={(event) => onChange({ text: event.target.value }, "caption")}
         />
         <div className="field-helper">
           <span>Enter 换行</span>
@@ -205,7 +207,7 @@ export default function Editor({
             type="color"
             aria-label="自定义文字颜色"
             value={settings.color}
-            onChange={(event) => onChange({ color: event.target.value })}
+            onChange={(event) => onChange({ color: event.target.value }, "color")}
           />
           <span>自定义</span>
         </label>
@@ -216,7 +218,7 @@ export default function Editor({
         min={16}
         max={120}
         unit=" px"
-        onChange={(fontSize) => onChange({ fontSize })}
+        onChange={(fontSize) => onChange({ fontSize }, "font-size")}
       />
       <Slider
         label="旋转"
@@ -224,7 +226,7 @@ export default function Editor({
         min={-90}
         max={90}
         unit="°"
-        onChange={(rotation) => onChange({ rotation })}
+        onChange={(rotation) => onChange({ rotation }, "rotation")}
       />
       <label className="switch-row">
         <span>
@@ -255,14 +257,14 @@ export default function Editor({
             value={settings.x}
             min={0}
             max={512}
-            onChange={(x) => onChange({ x })}
+            onChange={(x) => onChange({ x }, "position-x")}
           />
           <Slider
             label="垂直位置"
             value={settings.y}
             min={0}
             max={512}
-            onChange={(y) => onChange({ y })}
+            onChange={(y) => onChange({ y }, "position-y")}
           />
           <Slider
             label="行距"
@@ -270,7 +272,7 @@ export default function Editor({
             min={16}
             max={150}
             unit=" px"
-            onChange={(lineHeight) => onChange({ lineHeight })}
+            onChange={(lineHeight) => onChange({ lineHeight }, "line-height")}
           />
           <Slider
             label="字距"
@@ -279,7 +281,7 @@ export default function Editor({
             max={40}
             step={0.5}
             unit=" px"
-            onChange={(letterSpacing) => onChange({ letterSpacing })}
+            onChange={(letterSpacing) => onChange({ letterSpacing }, "letter-spacing")}
           />
           <Slider
             label="描边粗细"
@@ -287,7 +289,7 @@ export default function Editor({
             min={0}
             max={24}
             unit=" px"
-            onChange={(outlineWidth) => onChange({ outlineWidth })}
+            onChange={(outlineWidth) => onChange({ outlineWidth }, "outline-width")}
           />
           <label className="outline-color">
             描边颜色
@@ -295,7 +297,7 @@ export default function Editor({
               type="color"
               value={settings.outlineColor}
               onChange={(event) =>
-                onChange({ outlineColor: event.target.value })
+                onChange({ outlineColor: event.target.value }, "outline-color")
               }
             />
           </label>

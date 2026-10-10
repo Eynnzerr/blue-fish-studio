@@ -7,16 +7,26 @@ import {
   Eye,
   Fish,
   Github,
+  HardDrive,
   ImagePlus,
   Info,
   Moon,
   MousePointer2,
+  Redo2,
   Sparkles,
   Sun,
   Type,
+  Undo2,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type PointerEvent,
+} from "react";
 import Gallery from "./components/Gallery";
 import Editor from "./components/Editor";
 import GenerationDialog from "./components/GenerationDialog";
@@ -33,6 +43,18 @@ import {
 import { canvasToBlob, renderSticker } from "./lib/canvas";
 import { EXPORT_FORMATS, readImageFormat } from "./lib/image-formats";
 import { CANVAS_SIZE, sizeFromLongestEdge } from "./lib/render";
+import {
+  createInitialDocument,
+  useEditorHistory,
+  type WorkshopDocument,
+} from "./lib/editor-history";
+import {
+  readDraft,
+  type StoredDraft,
+  type StoredDraftImage,
+  type StoredDraftFont,
+} from "./lib/drafts";
+import { useDraftAutosave } from "./lib/use-draft-autosave";
 import type {
   Composition,
   EditorSettings,
@@ -44,7 +66,7 @@ import type {
 } from "./types";
 
 /** Source of the final canvas aspect ratio. */
-type CanvasMode = "square" | "image" | "custom";
+type CanvasMode = WorkshopDocument["canvasMode"];
 
 /** Resolve a bundled URL for root and subdirectory deployments alike. */
 function assetUrl(path: string) {
@@ -89,28 +111,36 @@ export default function App() {
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [personalStickers, setPersonalStickers] = useState<Sticker[]>([]);
   const [generationOpen, setGenerationOpen] = useState(false);
-  const [selected, setSelected] = useState<Sticker | null>(null);
-  const [settings, setSettings] = useState<EditorSettings>({
-    ...DEFAULT_SETTINGS,
-  });
+  const history = useEditorHistory(createInitialDocument());
+  const {
+    document: editorDocument, update, restore, undo, redo,
+    beginTransaction, endTransaction,
+  } = history;
+  const {
+    settings, crops, canvasMode, exportPreset, exportFormat, customSize, sizeLocked,
+  } = editorDocument;
+  const selected =
+    [...personalStickers, ...stickers].find(
+      (sticker) => sticker.id === editorDocument.selectedId,
+    ) ?? null;
+  /** Original personal image files remain available to history during this session. */
+  const [personalAssets, setPersonalAssets] = useState<StoredDraftImage[]>([]);
+  /** Imported font files used to restore the selected typeface after a refresh. */
+  const [customFonts, setCustomFonts] = useState<StoredDraftFont[]>([]);
+  /** Editing and autosave start only after the saved composition has been read. */
+  const [draftReady, setDraftReady] = useState(false);
+  /** Preserve the previous stored work when initialization cannot restore it. */
+  const [draftRestoreFailed, setDraftRestoreFailed] = useState(false);
   const [fonts, setFonts] = useState<FontOption[]>(BUILTIN_FONTS);
   const [readyFontFamily, setReadyFontFamily] = useState<string | null>(null);
+  /** Requested bundled font temporarily rendered with the system face after a load failure. */
+  const [fallbackFontFamily, setFallbackFontFamily] = useState<string | null>(null);
   const fontReady = readyFontFamily === settings.fontFamily;
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
-  const [crops, setCrops] = useState<Record<string, ImageCrop>>({});
   const [cropOpen, setCropOpen] = useState(false);
-  const [canvasMode, setCanvasMode] = useState<CanvasMode>("square");
-  const [exportPreset, setExportPreset] = useState<number | null>(1024);
-  /** Download encoding; clipboard images always use PNG. */
-  const [exportFormat, setExportFormat] = useState<ExportFormat>("png");
-  const [customSize, setCustomSize] = useState<ImageSize>({
-    width: 1024,
-    height: 1024,
-  });
-  const [sizeLocked, setSizeLocked] = useState(true);
   const [sizeValid, setSizeValid] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [dark, setDark] = useState(
@@ -123,6 +153,19 @@ export default function App() {
   const mounted = useRef(true);
   const imageSelection = useRef(0);
   const fontSelection = useRef(0);
+  /** Persist only assets used by this composition, rather than the whole session library. */
+  const draft = useMemo<StoredDraft>(
+    () => ({
+      document: editorDocument,
+      updatedAt: Date.now(),
+      images: personalAssets.filter(
+        (asset) => asset.sticker.id === editorDocument.selectedId,
+      ),
+      fonts: customFonts.filter((font) => font.family === settings.fontFamily),
+    }),
+    [editorDocument, personalAssets, customFonts, settings.fontFamily],
+  );
+  const draftSave = useDraftAutosave(draft, draftReady && !draftRestoreFailed);
   const crop = selected ? (crops[selected.id] ?? null) : null;
   const sourceWidth = image?.naturalWidth ?? selected?.width ?? CANVAS_SIZE;
   const sourceHeight = image?.naturalHeight ?? selected?.height ?? CANVAS_SIZE;
@@ -152,40 +195,106 @@ export default function App() {
         );
   /** Keep the preview and exported pixels identical when JPEG requires a white background. */
   const canvasSettings = useMemo<EditorSettings>(
-    () =>
-      exportFormat === "jpeg" ? { ...settings, background: "white" } : settings,
-    [settings, exportFormat],
+    () => ({
+      ...settings,
+      background: exportFormat === "jpeg" ? "white" : settings.background,
+      fontFamily:
+        fallbackFontFamily === settings.fontFamily
+          ? SYSTEM_FONT_FAMILY
+          : settings.fontFamily,
+    }),
+    [settings, exportFormat, fallbackFontFamily],
   );
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all(
-      ["stickers.json", "studio/stickers.json"].map(async (path) => {
-        const response = await fetch(assetUrl(path), {
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error("素材清单加载失败，请刷新重试");
-        return response.json() as Promise<Sticker[]>;
-      }),
-    )
-      .then((collections) => {
-        const localItems = collections.flat().map((item) => ({
-          ...item,
-          src: assetUrl(item.src),
-          preview: assetUrl(item.preview),
-        }));
-        setStickers(localItems);
-        setSelected((previous) => previous ?? localItems[0]);
-      })
-      .catch((cause: Error) => {
-        if (cause.name !== "AbortError") setToast(cause.message);
+    let active = true;
+    /** Restore resources before opening the draft so its first preview uses the saved font. */
+    async function openWorkshop() {
+      const collections = Promise.all(
+        ["stickers.json", "studio/stickers.json"].map(async (path) => {
+          const response = await fetch(assetUrl(path), {
+            signal: controller.signal,
+          });
+          if (!response.ok) throw new Error("素材清单加载失败，请刷新重试");
+          return response.json() as Promise<Sticker[]>;
+        }),
+      );
+      const [loaded, saved] = await Promise.all([
+        collections,
+        readDraft().catch(() => {
+          if (active) {
+            setDraftRestoreFailed(true);
+            setToast("未能读取本机草稿，原草稿已保留，请刷新重试");
+          }
+          return null;
+        }),
+      ]);
+      if (!active) return;
+      const localItems = loaded.flat().map((item) => ({
+        ...item,
+        src: assetUrl(item.src),
+        preview: assetUrl(item.preview),
+      }));
+      const nextDocument = saved?.document ?? createInitialDocument();
+      const restoredFonts: StoredDraftFont[] = [];
+      for (const font of saved?.fonts ?? []) {
+        try {
+          const face = await new FontFace(font.family, await font.blob.arrayBuffer()).load();
+          if (!active) return;
+          document.fonts.add(face);
+          restoredFonts.push(font);
+        } catch {
+          if (!active) return;
+          nextDocument.settings = {
+            ...nextDocument.settings, fontFamily: SYSTEM_FONT_FAMILY,
+          };
+          setToast("草稿字体无法恢复，已切换系统黑体");
+        }
+      }
+      if (!active) return;
+      const restoredImages = (saved?.images ?? []).map(({ sticker, blob }) => {
+        const url = URL.createObjectURL(blob);
+        personalUrls.current.push(url);
+        return { ...sticker, src: url, preview: url };
       });
-    return () => controller.abort();
+      const selectionExists = [...restoredImages, ...localItems].some(
+        (item) => item.id === nextDocument.selectedId,
+      );
+      if (!selectionExists) nextDocument.selectedId = localItems[0]?.id ?? null;
+      setStickers(localItems);
+      setPersonalStickers(restoredImages);
+      setPersonalAssets(saved?.images ?? []);
+      setCustomFonts(restoredFonts);
+      setFonts([
+        ...BUILTIN_FONTS,
+        ...restoredFonts.map(({ family, label }) => ({ family, label })),
+      ]);
+      restore(nextDocument);
+      setDraftReady(true);
+      if (saved && restoredFonts.length === saved.fonts.length) {
+        setToast(selectionExists
+          ? "已恢复上次的本机草稿"
+          : "原底图已移出图库，已恢复文案和排版，请重新选图");
+      }
+    }
+    void openWorkshop().catch((cause: Error) => {
+      if (active && cause.name !== "AbortError") {
+        setToast(cause.message);
+        setDraftRestoreFailed(true);
+        setDraftReady(true);
+      }
+    });
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   useEffect(() => {
     let active = true;
     const family = settings.fontFamily;
+    setFallbackFontFamily(null);
     const font = BUILTIN_FONTS.find((item) => item.family === family);
     if (!font?.source) {
       setReadyFontFamily(family);
@@ -197,12 +306,9 @@ export default function App() {
       })
       .catch(() => {
         if (active) {
-          setSettings((previous) =>
-            previous.fontFamily === family
-              ? { ...previous, fontFamily: SYSTEM_FONT_FAMILY }
-              : previous,
-          );
-          setToast(`${font.label}加载失败，已切换系统黑体，可稍后重新选择`);
+          setFallbackFontFamily(family);
+          setReadyFontFamily(family);
+          setToast(`${font.label}加载失败，暂用系统黑体，可稍后重新选择`);
         }
       });
     return () => {
@@ -252,60 +358,113 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    /** Finish pointer edits even when release happens outside the workshop. */
+    function finishGesture() {
+      endTransaction();
+    }
+    /** Keep native field undo and modal editing separate from composition shortcuts. */
+    function historyShortcut(event: KeyboardEvent) {
+      if ((!event.metaKey && !event.ctrlKey) || event.altKey || !draftReady) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (
+          target.closest("dialog[open]") || target.isContentEditable ||
+          target instanceof HTMLTextAreaElement ||
+          (target instanceof HTMLInputElement && target.type !== "range")
+        )) return;
+      const key = event.key.toLowerCase();
+      if (key !== "z" && !(key === "y" && event.ctrlKey)) return;
+      event.preventDefault();
+      imageSelection.current += 1;
+      fontSelection.current += 1;
+      if (key === "y" || event.shiftKey) redo();
+      else undo();
+    }
+    window.addEventListener("pointerup", finishGesture);
+    window.addEventListener("pointercancel", finishGesture);
+    window.addEventListener("blur", finishGesture);
+    window.addEventListener("keydown", historyShortcut);
+    return () => {
+      window.removeEventListener("pointerup", finishGesture);
+      window.removeEventListener("pointercancel", finishGesture);
+      window.removeEventListener("blur", finishGesture);
+      window.removeEventListener("keydown", historyShortcut);
+    };
+  }, [draftReady, endTransaction, undo, redo]);
+
+  /** Treat each canvas drag or range-slider gesture as one undoable operation. */
+  function startGesture(event: PointerEvent<HTMLDivElement>) {
+    const target = event.target;
+    if (target instanceof HTMLCanvasElement ||
+        (target instanceof HTMLInputElement && target.type === "range"))
+      beginTransaction();
+  }
+
+  /** Restore a composition and invalidate asynchronous imports that could change its selection. */
+  function navigateHistory(direction: "undo" | "redo") {
+    imageSelection.current += 1;
+    fontSelection.current += 1;
+    if (direction === "undo") undo();
+    else redo();
+  }
+
   /** Update only the controls changed by the user. */
-  function updateSettings(patch: Partial<EditorSettings>) {
+  function updateSettings(patch: Partial<EditorSettings>, group?: string) {
     if (patch.fontFamily) fontSelection.current += 1;
-    setSettings((previous) => ({ ...previous, ...patch }));
+    update({ settings: patch }, group);
   }
 
   /** Keep a gallery choice newer than any image still being decoded. */
   function selectSticker(sticker: Sticker) {
     imageSelection.current += 1;
-    setSelected(sticker);
+    update({ selectedId: sticker.id });
   }
 
   /** Restore the initial typography without changing the selected artwork. */
   function resetSettings() {
     fontSelection.current += 1;
-    setSettings({ ...DEFAULT_SETTINGS });
+    update({ settings: { ...DEFAULT_SETTINGS } });
     setToast("已恢复初始排版");
   }
 
   /** Apply a per-image crop without changing the source or the editable caption. */
   function applyCrop(nextCrop: ImageCrop | null): void {
     if (!selected) return;
-    setCrops((previous) => {
-      const next = { ...previous };
+    update((current) => {
+      const next = { ...current.crops };
       if (nextCrop) next[selected.id] = nextCrop;
       else delete next[selected.id];
-      return next;
+      return { crops: next };
     });
     setCropOpen(false);
   }
 
   /** Select a canvas aspect source, initializing free dimensions from the current output. */
   function changeCanvasMode(mode: CanvasMode): void {
-    setCanvasMode(mode);
-    setSizeLocked(mode !== "custom");
-    if (mode === "custom") {
-      setCustomSize(outputSize);
-      setExportPreset(null);
-    }
+    update({
+      canvasMode: mode,
+      sizeLocked: mode !== "custom",
+      ...(mode === "custom" ? { customSize: outputSize, exportPreset: null } : {}),
+    });
   }
 
   /** Start custom editing from the currently displayed output dimensions. */
   function changeExportPreset(preset: number | null): void {
-    if (preset === null) setCustomSize(outputSize);
-    setExportPreset(preset);
+    update({
+      exportPreset: preset,
+      ...(preset === null ? { customSize: outputSize } : {}),
+    });
   }
 
   /** Free dimensions change the canvas shape; locked dimensions change resolution only. */
   function changeOutputSize(size: ImageSize): void {
-    setCustomSize(size);
-    if (!sizeLocked) setCanvasMode("custom");
+    update({
+      customSize: size,
+      ...(!sizeLocked ? { canvasMode: "custom" as const } : {}),
+    }, "output-size");
   }
 
-  /** Decode a personal image and retain its Blob URL for this browser session. */
+  /** Decode an imported image and retain its original bytes for history and the current draft. */
   async function addPersonalImage(
     blob: Blob,
     name: string,
@@ -323,25 +482,25 @@ export default function App() {
         URL.revokeObjectURL(url);
         return;
       }
-      const sticker: Sticker = {
+      const stored: StoredDraftImage = { blob, sticker: {
         origin,
         id: crypto.randomUUID(),
         name,
         sourceNote,
-        src: url,
         format,
-        preview: url,
         featured: false,
         tags: [],
         selfMade: false,
         animated: format === "GIF",
         width: uploaded.naturalWidth,
         height: uploaded.naturalHeight,
-      };
+      } };
+      const sticker: Sticker = { ...stored.sticker, src: url, preview: url };
       personalUrls.current.push(url);
+      setPersonalAssets((previous) => [stored, ...previous]);
       setPersonalStickers((previous) => [sticker, ...previous]);
       // Retain the import even if the user has since selected another background.
-      if (revision === imageSelection.current) setSelected(sticker);
+      if (revision === imageSelection.current) update({ selectedId: sticker.id });
       setToast("已加入我的素材，可以继续配字了");
     } catch {
       URL.revokeObjectURL(url);
@@ -374,12 +533,14 @@ export default function App() {
       const face = await new FontFace(family, await file.arrayBuffer()).load();
       if (!mounted.current) return;
       document.fonts.add(face);
+      const label = file.name.replace(/\.[^.]+$/, "");
+      setCustomFonts((previous) => [...previous, { family, label, blob: file }]);
       setFonts((previous) => [
         ...previous,
-        { family, label: file.name.replace(/\.[^.]+$/, "") },
+        { family, label },
       ]);
       if (revision === fontSelection.current)
-        setSettings((previous) => ({ ...previous, fontFamily: family }));
+        update({ settings: { fontFamily: family } });
       setToast("字体已载入，可以开始创作了");
     } catch {
       if (mounted.current)
@@ -491,7 +652,12 @@ export default function App() {
             <p>大肥鱼已就位，今天配什么词？</p>
           </div>
         </section>
-        <div className="workspace">
+        <div
+          className="workspace"
+          inert={!draftReady}
+          aria-busy={!draftReady}
+          onPointerDownCapture={startGesture}
+        >
           <Gallery
             stickers={[...personalStickers, ...stickers]}
             selectedId={selected?.id || ""}
@@ -510,6 +676,48 @@ export default function App() {
                 拖动文字调整位置
               </span>
             </header>
+            <div className="editing-session-toolbar">
+              <div className="history-actions" role="group" aria-label="编辑历史">
+                <button
+                  className="text-button"
+                  aria-label="撤销"
+                  title="撤销（⌘Z / Ctrl+Z）"
+                  disabled={!history.canUndo}
+                  onClick={() => navigateHistory("undo")}
+                >
+                  <Undo2 size={15} />
+                  撤销
+                </button>
+                <button
+                  className="text-button"
+                  aria-label="重做"
+                  title="重做（⌘⇧Z / Ctrl+Y）"
+                  disabled={!history.canRedo}
+                  onClick={() => navigateHistory("redo")}
+                >
+                  <Redo2 size={15} />
+                  重做
+                </button>
+              </div>
+              <span
+                className={`draft-save-status${draftRestoreFailed || draftSave.status === "error" ? " has-error" : ""}`}
+                role="status"
+                title={draftRestoreFailed
+                  ? "原草稿已保留，刷新后重试读取"
+                  : draftSave.error || "自动保存当前底图、文案、裁剪、排版和导出设置，仅保存在本机浏览器"}
+              >
+                {draftSave.status === "saved" ? <Check size={13} /> : <HardDrive size={13} />}
+                {!draftReady
+                  ? "正在读取草稿…"
+                  : draftRestoreFailed
+                    ? "草稿恢复失败，请刷新"
+                    : draftSave.status === "error"
+                      ? "草稿保存失败"
+                      : draftSave.status === "saved"
+                        ? "草稿已保存到本机"
+                        : "正在保存草稿…"}
+              </span>
+            </div>
             <div className="canvas-controls">
               <div className="canvas-control-field">
                 <span id="canvas-layout-label">文字布局</span>
@@ -668,12 +876,12 @@ export default function App() {
               <ExportOptions
                 size={outputSize}
                 format={exportFormat}
-                onFormatChange={setExportFormat}
+                onFormatChange={(format) => update({ exportFormat: format })}
                 preset={exportPreset}
                 locked={sizeLocked}
                 aspect={aspect}
                 onPresetChange={changeExportPreset}
-                onLockedChange={setSizeLocked}
+                onLockedChange={(locked) => update({ sizeLocked: locked })}
                 onSizeChange={changeOutputSize}
                 onValidityChange={setSizeValid}
               />
@@ -876,7 +1084,7 @@ export default function App() {
         </dl>
         <p className="dialog-note">
           图片权利归各自创作者；上述 CC BY-NC-SA 4.0
-          对应女仆形象二次设计。个人素材与导入的字体保留至页面刷新，收藏保存在本机。生成底图时，提示词与
+          对应女仆形象二次设计。当前草稿及其使用的个人底图、字体自动保存在本机，收藏也保存在本机。生成底图时，提示词与
           API Key 直接发送至你填写的模型服务。
         </p>
         <button

@@ -1,10 +1,10 @@
 /** One archive, workshop, or personal image with its provenance and labels. */
 export interface Sticker {
-  /** Stable bundled-image identifier or a session identifier for a personal image. */
+  /** Stable identifier for a bundled image or an imported original file. */
   id: string;
   /** Human-readable gallery label. */
   name: string;
-  /** Collection that supplies the image, including generated and uploaded session images. */
+  /** Collection that supplies the image, including generated and uploaded originals. */
   origin: "archive" | "studio" | "upload" | "generated";
   /** Original archive image identifier when this image is a workshop derivative. */
   sourceId?: string;

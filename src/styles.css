@@ -750,7 +750,37 @@ select {
   padding: 24px;
 }
 .preview-panel .panel-heading {
-  margin-bottom: 25px;
+  margin-bottom: 16px;
+}
+/* Keep recovery controls close to the canvas without competing with export actions. */
+.editing-session-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-bottom: 18px;
+}
+.history-actions {
+  display: flex;
+  gap: 6px;
+}
+.history-actions .text-button {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+}
+.draft-save-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.draft-save-status.has-error {
+  color: var(--pink);
 }
 .canvas-drag-hint {
   display: inline-flex;
