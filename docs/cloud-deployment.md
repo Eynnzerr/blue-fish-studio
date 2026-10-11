@@ -1,16 +1,63 @@
 # 云服务器部署
 
-本方案以 `https://eynnzerr.cloud/blue-fish` 作为公共入口的部署目标。Nginx 终止 HTTPS、按出口 IP 限流，并用服务器上的私密 Key 转发到本机 Docker 服务。完成公网验证后，AstrBot 插件可使用这个地址，API Key 留空。
-
-本方案复用 `eynnzerr.cloud` 已有的 HTTPS 站点与证书，只增加 `/blue-fish/` 路由。保留现有的 `/bandori` 等路由和证书续期配置。
+正式网页由 GitHub Pages 托管在 `https://fish.eynnzerr.cloud/`。云服务器通过已有 Nginx HTTPS 站点提供统计接口 `https://eynnzerr.cloud/blue-fish/api/v1/stats`，累计访问与网页成品导出次数。
 
 ## 当前状态
 
-2026-10-09：镜像和 Nginx 路由已安装，服务器内 HTTPS 健康检查通过。批量图片检查期间服务器出现严重资源等待，现已停止肥鱼 API 并禁用自动重启，SSH 和原有 AstrBot 已恢复。图片接口云端验收尚未完成。
+2026-10-11：独立统计服务已启动，公网 HTTPS、允许站点的 CORS 上报、事件去重及重启持久化已验证。数据从本次上线开始累计。统计进程使用现有镜像中的 Node.js 运行环境，内存上限 96 MiB。
 
-域名尚未备案，公网访问被阿里云备案检查拦截。插件默认公共地址待服务器资源调整、备案及公网验证完成后发布。
+图片 API 在 2026-10-09 的批量检查中引发严重资源等待，目前保持停止，图片接口云端验收尚未完成。
 
 当前服务器使用预构建镜像 `blue-fish-studio-api:cloud-27384b3`。部署目录 `/opt/blue-fish-studio` 保存 Compose、`.env.api`、`deploy/` 配置和 `checks/` 验证文件，是运行目录；源码与镜像构建在本机完成。
+
+## 独立统计服务
+
+将以下文件同步到 `/opt/blue-fish-studio/`，保持目录结构：
+
+- `compose.stats.yaml`
+- `server/stats-server.ts`、`server/stats-service.ts`、`server/http.ts`、`server/stats.ts`
+- `deploy/nginx-blue-fish-http.conf`、`deploy/nginx-blue-fish-stats.conf`
+
+服务器的 `.env.stats` 内容为：
+
+```dotenv
+STATS_RUNTIME_IMAGE=blue-fish-studio-api:cloud-27384b3
+STATS_ALLOWED_ORIGINS=https://fish.eynnzerr.cloud,https://eynnzerr.github.io
+STATS_RATE_LIMIT_PER_MINUTE=3000
+```
+
+首次启动时创建持久化目录，并赋予容器用户写入权限：
+
+```sh
+cd /opt/blue-fish-studio
+install -d -m 750 -o 1000 -g 1000 data
+docker compose -f compose.stats.yaml --env-file .env.stats up -d --no-build --pull never
+curl --fail http://127.0.0.1:8791/healthz
+```
+
+统计容器为 `blue-fish-studio-stats-stats-1`，仅绑定主机 `127.0.0.1:8791`。数据库保存在宿主机 `data/stats.sqlite`，源码更新后重启统计容器即可生效：
+
+```sh
+docker compose -f compose.stats.yaml --env-file .env.stats restart stats
+```
+
+Nginx 的 `http` 块使用 `nginx-blue-fish-http.conf`，已有 HTTPS `server` 块中增加：
+
+```nginx
+include /etc/nginx/snippets/nginx-blue-fish-stats.conf;
+```
+
+安装两个配置文件后执行 `nginx -t` 和 `systemctl reload nginx`。统计路由按访客 IP 限制为每分钟 60 次，最多额外接受 10 次突发请求。请求转发到独立统计端口；已有图片 API 路由继续使用 8787。
+
+GitHub 仓库 Actions Variable `VITE_STATS_API_URL` 设置为 `https://eynnzerr.cloud/blue-fish/api/v1/stats`，Pages 工作流在构建时读取。正式网页每次打开上报访问，完成图片下载或复制后上报导出；详细口径见 [全站统计](statistics.md)。
+
+验证公网读取：
+
+```sh
+curl --fail https://eynnzerr.cloud/blue-fish/api/v1/stats
+```
+
+后续各节为图片 API 的部署与资源排障记录。
 
 ## 本机构建并传送镜像
 
@@ -123,7 +170,7 @@ curl --fail --silent --show-error \
   https://eynnzerr.cloud/blue-fish/healthz
 ```
 
-备案完成后，从服务器外验证公共入口：
+图片服务恢复后，从服务器外验证公共入口：
 
 ```sh
 curl --fail --silent --show-error \

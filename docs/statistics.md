@@ -30,11 +30,34 @@ STATS_PROXY_TARGET=http://127.0.0.1:8790
 
 服务端的 `STATS_ALLOWED_ORIGINS` 默认允许 localhost 和 127.0.0.1 的 5173、5174 端口。使用其他页面地址时，将对应 Origin 加入此配置。
 
+## 独立统计服务
+
+静态网页只需要统计时，可单独运行 `server/stats-server.ts`，无需加载图片渲染、字体或素材库。使用 Node.js 22.18+ 的原生 TypeScript 支持启动：
+
+```sh
+STATS_ALLOWED_ORIGINS='https://fish.eynnzerr.cloud' \
+  node --experimental-strip-types server/stats-server.ts
+```
+
+默认监听 `127.0.0.1:8791`，提供 `/healthz` 与上述两个统计接口。`HOST`、`PORT`、`STATS_DB_PATH` 可覆盖默认值。
+
+Docker 部署使用仓库中的 `compose.stats.yaml`，将 `server/` 和宿主机 `data/` 分别挂载为源码与数据库目录。首次部署：
+
+```sh
+mkdir -p data
+sudo chown 1000:1000 data
+docker compose -f compose.stats.yaml up -d
+```
+
+服务内存上限为 96 MiB，自动重启策略为 `unless-stopped`。默认使用 `node:22-bookworm-slim`；已有 Node.js 22.18+ 镜像时，可通过 `STATS_RUNTIME_IMAGE` 指定。服务端请求额度为每分钟 3000 次，公网 Nginx 再按访客 IP 限制为每分钟 60 次。
+
 ## 持久化
 
 本机直接运行 API 时，数据库默认位于 `data/stats.sqlite`，也可通过 `STATS_DB_PATH` 指定路径。Docker Compose 将 `stats-data` 卷挂载到 `/app/data`。数据库目录已加入 Git 与 Docker 构建忽略列表。
 
 更新镜像时保留数据卷即可继续累计。备份时停止服务后复制整个数据目录，再启动服务；`docker compose down -v` 会删除统计卷和其中的数据。
+
+独立统计 Compose 使用宿主机 `data/` 目录，不使用上述命名卷。云服务器数据库位于 `/opt/blue-fish-studio/data/stats.sqlite`；更新源码或替换容器时保留这个目录。
 
 ## 接口
 
@@ -62,7 +85,9 @@ STATS_PROXY_TARGET=http://127.0.0.1:8790
 VITE_STATS_API_URL='https://your-api.example/api/v1/stats' npm run build
 ```
 
-同时将网站 Origin 加入 API 的 `STATS_ALLOWED_ORIGINS`。GitHub Pages 可在构建环境中注入此变量。该变量是公开接口地址，图片服务的私密 API Key 留在服务端。
+同时将网站 Origin 加入 API 的 `STATS_ALLOWED_ORIGINS`。该变量是公开接口地址，图片服务的私密 API Key 留在服务端。
+
+当前正式网页为 `https://fish.eynnzerr.cloud/`，公共统计接口为 `https://eynnzerr.cloud/blue-fish/api/v1/stats`。GitHub Pages 工作流将仓库 Actions Variable `VITE_STATS_API_URL` 注入构建；修改地址后需重新运行 Pages 发布。云端运行与 Nginx 配置见 [云服务器部署](cloud-deployment.md#独立统计服务)。
 
 ## 集成检查
 
