@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import { dirname, extname, isAbsolute, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getImageLabels, hashImage, readLabels } from "./lib/sticker-labels.mjs";
 
 /** Absolute project directory, independent of the caller's working directory. */
 const projectRoot = fileURLToPath(new URL("../", import.meta.url));
@@ -31,60 +32,21 @@ const allowedImageExtensions = new Set([
 
 /** Curated images in gallery order; the waving portrait is the initial canvas. */
 const featuredImages = [
-  [
-    "d862eb062421f65d869091609b86f520.png",
-    "挥手打招呼",
-    ["挥手", "你好", "开心", "透明底"],
-  ],
-  [
-    "c0b02b5d709e92585afa2d6167f411e6.png",
-    "乖巧看你",
-    ["乖巧", "可爱", "透明底"],
-  ],
-  [
-    "669a40f46758917ffbbf43c961b484c3.png",
-    "眼镜认真鱼",
-    ["眼镜", "认真", "思考", "透明底"],
-  ],
-  [
-    "3734d055a7ed7624e3f0951a3a6941a5.png",
-    "开开心心",
-    ["开心", "笑脸", "透明底"],
-  ],
-  [
-    "2debd765-ea55-41a9-a383-7d39826bee2d.png",
-    "摸摸头",
-    ["摸头", "开心", "可爱"],
-  ],
-  [
-    "89128212ab62c6eb4e03a95568bf9827.png",
-    "吃瓜时间",
-    ["吃瓜", "围观", "西瓜"],
-  ],
-  [
-    "76800d7e469366970d8983bea4b22ed0.jpg",
-    "满脑子问号",
-    ["疑问", "问号", "思考"],
-  ],
-  [
-    "ce08b4d81dbd0858a3e364ae068fadaf.jpg",
-    "开心干饭",
-    ["干饭", "吃饭", "开心"],
-  ],
-  [
-    "f403ac42d0b8c2d0d771745f3d9c6163_0.png",
-    "鲸鱼窝里睡觉",
-    ["睡觉", "困困", "休息"],
-  ],
-  ["image007.png", "简笔小鱼", ["简笔画", "可爱", "乖巧"]],
+  "d862eb062421f65d869091609b86f520.png",
+  "c0b02b5d709e92585afa2d6167f411e6.png",
+  "669a40f46758917ffbbf43c961b484c3.png",
+  "3734d055a7ed7624e3f0951a3a6941a5.png",
+  "2debd765-ea55-41a9-a383-7d39826bee2d.png",
+  "89128212ab62c6eb4e03a95568bf9827.png",
+  "76800d7e469366970d8983bea4b22ed0.jpg",
+  "ce08b4d81dbd0858a3e364ae068fadaf.jpg",
+  "f403ac42d0b8c2d0d771745f3d9c6163_0.png",
+  "image007.png",
 ];
 
-/** Editorial data keyed by the archive's stable original filename. */
+/** Featured order keyed by the archive's stable original filename. */
 const featuredByFilename = new Map(
-  featuredImages.map(([filename, name, tags], order) => [
-    filename,
-    { name, tags, order },
-  ]),
+  featuredImages.map((filename, order) => [filename, order]),
 );
 
 /**
@@ -139,6 +101,8 @@ async function copyArchiveAsset(
 
 /** Refresh archive images and metadata without changing the separate studio collection. */
 async function syncAssets() {
+  /** Persistent manual and automatic annotations, including removed archive originals. */
+  const labels = await readLabels();
   /** Canonical checkout root used to validate every source image. */
   const resolvedSourceRoot = await realpath(sourceRoot);
   /** Upstream entries in their original order. */
@@ -156,8 +120,6 @@ async function syncAssets() {
     /** Generated gallery metadata, preserving the existing labels and sort order. */
     const stickers = [];
     for (const [index, entry] of manifest.entries()) {
-      /** Optional curated name and tags for this original archive filename. */
-      const editorial = featuredByFilename.get(entry.filename);
       // Sequential copies finish or fail before cleanup can remove the staging directory.
       await copyArchiveAsset(
         entry.original,
@@ -171,23 +133,26 @@ async function syncAssets() {
         resolvedSourceRoot,
         stagingRoot,
       );
+      /** Original bytes shared by encoding detection and annotation fingerprinting. */
+      const bytes = await readFile(resolve(stagingRoot, entry.original));
       /** Encoding detected from the copied original, since upstream extensions can be inaccurate. */
-      const format = detectOriginalFormat(
-        await readFile(resolve(stagingRoot, entry.original)),
-      );
+      const format = detectOriginalFormat(bytes);
+      /** Only labels for these exact original bytes can enter the generated gallery. */
+      const imageLabels = getImageLabels(labels[entry.filename], hashImage(bytes));
 
       stickers.push({
         id: entry.filename,
         /** Gallery source; creator attribution remains in the archive metadata. */
         origin: "archive",
         name:
-          editorial?.name ?? `大肥鱼 #${String(index + 1).padStart(3, "0")}`,
+          imageLabels.name ?? `大肥鱼 #${String(index + 1).padStart(3, "0")}`,
         src: `archive/${entry.original}`,
         /** Original encoding shown in the gallery and canvas details. */
         format,
         preview: `archive/${entry.preview}`,
-        tags: ["大肥鱼", "鲸鱼娘", "DeepSeek", ...(editorial?.tags ?? [])],
-        featured: Boolean(editorial),
+        tags: [...new Set(["大肥鱼", "鲸鱼娘", "DeepSeek", ...imageLabels.tags])],
+        ...(imageLabels.ocrText ? { ocrText: imageLabels.ocrText } : {}),
+        featured: featuredByFilename.has(entry.filename),
         selfMade: Boolean(entry.selfMade),
         animated: format === "GIF",
         // Archive metadata describes the thumbnail; its aspect ratio matches the original.
@@ -198,8 +163,8 @@ async function syncAssets() {
 
     stickers.sort(
       (left, right) =>
-        (featuredByFilename.get(left.id)?.order ?? featuredImages.length) -
-        (featuredByFilename.get(right.id)?.order ?? featuredImages.length),
+        (featuredByFilename.get(left.id) ?? featuredImages.length) -
+        (featuredByFilename.get(right.id) ?? featuredImages.length),
     );
     // Replace only after every image is present; removed upstream entries disappear with the old archive.
     await rm(resolve(publicRoot, "archive"), { recursive: true, force: true });

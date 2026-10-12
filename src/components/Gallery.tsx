@@ -115,7 +115,7 @@ export default function Gallery({
           favorites.has(sticker.id));
       const matchesSearch =
         !term ||
-        [sticker.name, sticker.id, ...sticker.tags]
+        [sticker.name, sticker.id, sticker.ocrText ?? "", ...sticker.tags]
           .join(" ")
           .toLocaleLowerCase()
           .includes(term);
@@ -184,8 +184,8 @@ export default function Gallery({
         <input
           type="search"
           value={query}
-          placeholder="搜索底图、标签…"
-          aria-label="搜索素材名称、文件名或标签"
+          placeholder="搜索底图、标签、图片文字…"
+          aria-label="搜索素材名称、文件名、标签或图片文字"
           onChange={(event) => {
             setQuery(event.target.value);
             setVisibleCount(PAGE_SIZE);

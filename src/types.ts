@@ -20,6 +20,8 @@ export interface Sticker {
   preview: string;
   /** Searchable labels assigned to curated images. */
   tags: string[];
+  /** Original image lettering recognized by the labeling job, searchable alongside tags. */
+  ocrText?: string;
   /** Whether this image is in the curated gallery. */
   featured: boolean;
   /** Whether the archive marks this image as made by its maintainer. */

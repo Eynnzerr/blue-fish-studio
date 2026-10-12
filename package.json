@@ -10,7 +10,8 @@
     "api": "node --import tsx server/index.ts",
     "check:api": "tsc --project tsconfig.server.json",
     "smoke:api": "node scripts/check-api.mjs",
-    "sync:assets": "node scripts/sync-assets.mjs"
+    "sync:assets": "node scripts/sync-assets.mjs",
+    "label:assets": "node --env-file-if-exists=.env.labels.local scripts/label-stickers.mjs"
   },
   "dependencies": {
     "@napi-rs/canvas": "1.0.10",

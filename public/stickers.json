@@ -146,7 +146,8 @@
     "selfMade": false,
     "animated": false,
     "width": 388,
-    "height": 388
+    "height": 388,
+    "ocrText": "?"
   },
   {
     "id": "ce08b4d81dbd0858a3e364ae068fadaf.jpg",
@@ -214,50 +215,61 @@
   {
     "id": "00dc341c60ffdff4d04e515fe9644a02.png",
     "origin": "archive",
-    "name": "大肥鱼 #001",
+    "name": "鲸鱼娘课堂划重点",
     "src": "archive/media/00dc341c60ffdff4d04e515fe9644a02.png",
     "format": "PNG",
     "preview": "archive/previews/00dc341c60ffdff4d04e515fe9644a02.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "开心",
+      "学习",
+      "指向"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "DeepSeek\n不是……\n而是……\n大学习\n划重点！\n勤学善问\n今日主题：\n论文写作\n万能公式\n笔记本\n划重点\n努力学习\nDeepSeek讲堂\n@deepseek吧"
   },
   {
     "id": "0132c6389ab9b67532ee508a599e5855_0.png",
     "origin": "archive",
-    "name": "大肥鱼 #002",
+    "name": "假如给我三天多模态",
     "src": "archive/media/0132c6389ab9b67532ee508a599e5855_0.png",
     "format": "PNG",
     "preview": "archive/previews/0132c6389ab9b67532ee508a599e5855_0.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "疑惑",
+      "得意",
+      "吐槽"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "假如给我三天多模态！\n鲸伦凯勒\n？？？"
   },
   {
     "id": "026e44f4-845f-4e51-bcec-812497aadcff.png",
     "origin": "archive",
-    "name": "大肥鱼 #003",
+    "name": "女仆装害羞思考",
     "src": "archive/media/026e44f4-845f-4e51-bcec-812497aadcff.png",
     "format": "PNG",
     "preview": "archive/previews/026e44f4-845f-4e51-bcec-812497aadcff.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "害羞",
+      "平静",
+      "思考"
     ],
     "featured": false,
     "selfMade": false,
@@ -268,32 +280,36 @@
   {
     "id": "0392c11e-36f8-4b4f-9a81-11e04ff41336.webp",
     "origin": "archive",
-    "name": "大肥鱼 #004",
+    "name": "得意说杂鱼",
     "src": "archive/media/0392c11e-36f8-4b4f-9a81-11e04ff41336.webp",
     "format": "WebP",
     "preview": "archive/previews/0392c11e-36f8-4b4f-9a81-11e04ff41336.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "得意",
+      "吐槽"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "杂鱼♡"
   },
   {
     "id": "0532c7f8f6aeafb4ab37c2858a41b7d7.png",
     "origin": "archive",
-    "name": "大肥鱼 #005",
+    "name": "蓝发女仆呆萌特写",
     "src": "archive/media/0532c7f8f6aeafb4ab37c2858a41b7d7.png",
     "format": "PNG",
     "preview": "archive/previews/0532c7f8f6aeafb4ab37c2858a41b7d7.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "平静"
     ],
     "featured": false,
     "selfMade": true,
@@ -304,14 +320,16 @@
   {
     "id": "05c6a87f9093198510e095ec16011b8f.png",
     "origin": "archive",
-    "name": "大肥鱼 #006",
+    "name": "烟花下微笑伸手",
     "src": "archive/media/05c6a87f9093198510e095ec16011b8f.png",
     "format": "PNG",
     "preview": "archive/previews/05c6a87f9093198510e095ec16011b8f.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "开心",
+      "庆祝"
     ],
     "featured": false,
     "selfMade": false,
@@ -322,104 +340,122 @@
   {
     "id": "06bfc1ec-83b5-444e-b151-f35fb199b856.webp",
     "origin": "archive",
-    "name": "大肥鱼 #007",
+    "name": "用户彻底怒了",
     "src": "archive/media/06bfc1ec-83b5-444e-b151-f35fb199b856.webp",
     "format": "WebP",
     "preview": "archive/previews/06bfc1ec-83b5-444e-b151-f35fb199b856.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "紧张",
+      "挥手"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "用户彻底怒了"
   },
   {
     "id": "08fd0ba72a47b36f62eac09ee8e6b7a4_0.png",
     "origin": "archive",
-    "name": "大肥鱼 #008",
+    "name": "压力一只蓝色大肥鱼",
     "src": "archive/media/08fd0ba72a47b36f62eac09ee8e6b7a4_0.png",
     "format": "PNG",
     "preview": "archive/previews/08fd0ba72a47b36f62eac09ee8e6b7a4_0.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "疑惑",
+      "紧张",
+      "吐槽",
+      "指向"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "压力一只蓝色大肥鱼？"
   },
   {
     "id": "0a34f963-5679-46c6-852f-90f9b6ef083f.png",
     "origin": "archive",
-    "name": "大肥鱼 #009",
+    "name": "指着照片介绍人物",
     "src": "archive/media/0a34f963-5679-46c6-852f-90f9b6ef083f.png",
     "format": "PNG",
     "preview": "archive/previews/0a34f963-5679-46c6-852f-90f9b6ef083f.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "开心",
+      "指向"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 360
+    "height": 360,
+    "ocrText": "这是张雪峰"
   },
   {
     "id": "0ac8d8a28fa41d3b6b46b7fd37819cf2_0.png",
     "origin": "archive",
-    "name": "大肥鱼 #010",
+    "name": "涨价前焦虑囤货",
     "src": "archive/media/0ac8d8a28fa41d3b6b46b7fd37819cf2_0.png",
     "format": "PNG",
     "preview": "archive/previews/0ac8d8a28fa41d3b6b46b7fd37819cf2_0.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "紧张",
+      "工作"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 438,
-    "height": 480
+    "height": 480,
+    "ocrText": "这些都要在17号\n前用完\nDeepSeek-V4-Pro 正式版发布，自北京时间 2026.8.17\n00:00 起，全面上调 API 价格并执行峰谷定价，闲时价格\n为高峰时段价格的一半，请查询价格页面详情，合理安排\n您的使用。"
   },
   {
     "id": "0c493abc-becd-4471-ba1c-13248793fb4d.webp",
     "origin": "archive",
-    "name": "大肥鱼 #011",
+    "name": "女仆装鲸鱼娘最强",
     "src": "archive/media/0c493abc-becd-4471-ba1c-13248793fb4d.webp",
     "format": "WebP",
     "preview": "archive/previews/0c493abc-becd-4471-ba1c-13248793fb4d.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "得意",
+      "叉腰"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "最强"
   },
   {
     "id": "0caa00706c10eb6a8aa7ab121fcad0ab.jpg",
     "origin": "archive",
-    "name": "大肥鱼 #012",
+    "name": "戴眼镜的呆萌女仆",
     "src": "archive/media/0caa00706c10eb6a8aa7ab121fcad0ab.jpg",
     "format": "JPEG",
     "preview": "archive/previews/0caa00706c10eb6a8aa7ab121fcad0ab.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "平静"
     ],
     "featured": false,
     "selfMade": false,
@@ -430,38 +466,43 @@
   {
     "id": "0cda0d94-6dcf-4565-a756-81663859ee8d.png",
     "origin": "archive",
-    "name": "大肥鱼 #013",
+    "name": "女仆挥扫把赶鱼",
     "src": "archive/media/0cda0d94-6dcf-4565-a756-81663859ee8d.png",
     "format": "PNG",
     "preview": "archive/previews/0cda0d94-6dcf-4565-a756-81663859ee8d.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "生气",
+      "拒绝"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "不知道用户有什么用，\n先赶走吧\n知乎 @咸鱼狐葱"
   },
   {
     "id": "0d8a6514-0b1f-4b24-8439-3b62990fb5a2.png",
     "origin": "archive",
-    "name": "大肥鱼 #014",
+    "name": "正在测试herness",
     "src": "archive/media/0d8a6514-0b1f-4b24-8439-3b62990fb5a2.png",
     "format": "PNG",
     "preview": "archive/previews/0d8a6514-0b1f-4b24-8439-3b62990fb5a2.webp",
     "tags": [
       "大肥鱼",
       "鲸鱼娘",
-      "DeepSeek"
+      "DeepSeek",
+      "开心"
     ],
     "featured": false,
     "selfMade": false,
     "animated": false,
     "width": 480,
-    "height": 480
+    "height": 480,
+    "ocrText": "正在测试herness"
   },
   {
     "id": "0e450c196cbcd7072a81d7705f4a5ed6_0.png",
