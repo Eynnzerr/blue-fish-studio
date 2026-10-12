@@ -123,20 +123,26 @@ export async function renderCatalogPreview(
   const height =
     HEADER_HEIGHT + rows * CARD_HEIGHT + (rows - 1) * CARD_GAP + FOOTER_HEIGHT;
   const canvas = createCanvas(SHEET_WIDTH, height);
-  const context = canvas.getContext("2d");
-  context.fillStyle = "#edf4ff";
-  context.fillRect(0, 0, SHEET_WIDTH, height);
-  context.fillStyle = "#285aa1";
-  context.font = '44px "Maoken"';
-  context.fillText("肥鱼素材", SHEET_MARGIN + 4, 64);
-  context.fillStyle = "#657b97";
-  context.font = '24px "Maoken"';
-  context.fillText("看图选编号，把想说的话交给肥鱼", SHEET_MARGIN + 4, 103);
+  try {
+    const context = canvas.getContext("2d");
+    context.fillStyle = "#edf4ff";
+    context.fillRect(0, 0, SHEET_WIDTH, height);
+    context.fillStyle = "#285aa1";
+    context.font = '44px "Maoken"';
+    context.fillText("肥鱼素材", SHEET_MARGIN + 4, 64);
+    context.fillStyle = "#657b97";
+    context.font = '24px "Maoken"';
+    context.fillText("看图选编号，把想说的话交给肥鱼", SHEET_MARGIN + 4, 103);
 
-  items.forEach((item, index) => drawCard(context, item, index));
+    items.forEach((item, index) => drawCard(context, item, index));
 
-  context.fillStyle = "#285aa1";
-  context.font = '28px "Maoken"';
-  context.fillText("用法  /肥鱼 1 想说的话", SHEET_MARGIN + 4, height - 34);
-  return canvas.encode("png");
+    context.fillStyle = "#285aa1";
+    context.font = '28px "Maoken"';
+    context.fillText("用法  /肥鱼 1 想说的话", SHEET_MARGIN + 4, height - 34);
+    return canvas.encodeSync("png");
+  } finally {
+    // Resizing drops the native drawing surface after encoding has completed.
+    canvas.width = 1;
+    canvas.height = 1;
+  }
 }

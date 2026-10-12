@@ -2,13 +2,15 @@
 
 通过 HTTP 提交底图 ID、文案和样式，服务返回一张 1024 × 1024 PNG。图片在服务端合成后直接响应，不保存生成结果。适合由 AstrBot 等程序调用，将返回的图片字节发送到聊天中。
 
-## 公共入口配置示例
+## 公共 QQ Bot 服务
 
-本文以 **`https://eynnzerr.cloud/blue-fish`** 作为公共入口的部署目标，当前尚未开放。服务器资源调整、域名备案与公网验证完成后，调用方无需 API Key，AstrBot 插件对应的 API Key 留空。当前使用请按下节部署自己的服务。
+服务地址为 **`https://eynnzerr.cloud/blue-fish`**，已于 2026-10-12 在升级至 4 GB 的服务器上启用并通过公网调用验证。面向所有安装肥鱼工坊插件的 QQ Bot，默认无需 API Key；AstrBot 插件使用此地址，API Key 留空。
 
-示例配置按出口 IP 限制为每分钟 20 次请求，允许少量突发请求；同一台 AstrBot 的多个群共享出口 IP 额度。目录预览与成品图片另共用全服务每分钟 60 次、同时渲染 1 张的上限。达到限制时会返回 `429` 或 `503`，稍后重试。
+无需发送 Authorization 请求头。若主动提供了非空且无效的密钥，Nginx 在读取正文和计算图片入口限流之前返回 `401`。有效凭证仅供已授权实例使用，不随开源插件分发。后端直接根据凭证区分公共与凭证调用，不接受客户端声称的实例身份。
 
-以下接口示例使用这一目标地址。自建服务通过 `Authorization: Bearer <API_KEY>` 认证，部署方式见下节；现有域名与 Nginx 的接入步骤见 [云服务器部署](cloud-deployment.md)。
+公共入口按出口 IP 限制为每分钟 20 次请求，额外允许 3 次突发请求；同一台 AstrBot 的多个群共享出口 IP 额度。目录预览与成品图片共用全服务每分钟 30 次的渲染上限，其中公共调用最多 24 次，保留 6 次给运维或已授权实例；有效凭证也可使用公共剩余额度。所有调用共享同时渲染 1 张的上限。图片入口最多同时接收 4 个请求，每个 IP 最多 2 个；达到限制时返回 `429` 或 `503`，稍后重试。统计服务使用独立额度。
+
+以下接口示例使用公共地址。自建服务默认通过 `Authorization: Bearer <API_KEY>` 认证，部署方式见下节；现有域名与 Nginx 的接入步骤见 [云服务器部署](cloud-deployment.md)。
 
 ## 自建服务
 
@@ -47,6 +49,8 @@ Docker 使用 Node.js 22。Compose 默认将服务端口映射到主机的 `127.
 | `API_PORT` | `8787` | Compose 映射到主机的端口，区别于容器内的 `PORT` |
 | `MAX_CONCURRENT_RENDERS` | `2` | 同时处理的渲染请求上限 |
 | `RATE_LIMIT_PER_MINUTE` | `60` | 全服务共用的每分钟渲染请求上限 |
+| `ALLOW_ANONYMOUS_RENDER` | `false` | 仅设为 `true` 时允许无凭证查询与渲染；云端公共服务已开启 |
+| `PUBLIC_RATE_LIMIT_PER_MINUTE` | 与总渲染上限相同 | 公共渲染占用的每分钟额度上限，不得超过总上限；云端设为 `24` |
 | `STATS_DB_PATH` | `data/stats.sqlite` | SQLite 数据库路径；Compose 使用 `/app/data/stats.sqlite` 与持久卷 |
 | `STATS_ALLOWED_ORIGINS` | 本机 localhost / 127.0.0.1 的 5173、5174 端口 | 逗号分隔的网站 Origin，供统计跨域与上报校验 |
 | `STATS_RATE_LIMIT_PER_MINUTE` | `120` | 每个直接连接地址每分钟的统计请求上限 |
@@ -59,11 +63,11 @@ Docker 使用 Node.js 22。Compose 默认将服务端口映射到主机的 `127.
 API_KEY='replace-with-your-key' npm run smoke:api
 ```
 
-命令通过真实 HTTP 请求检查接口并验证返回的 PNG，保存样图和报告。`API_KEY` 必填，并与服务一致；`API_BASE_URL` 默认是 `http://127.0.0.1:8787`，`API_SMOKE_OUTPUT` 默认是 `.preview/api-smoke`，可通过环境变量调整。
+命令针对默认私有部署，通过真实 HTTP 请求检查鉴权和返回的 PNG，保存样图和报告。`API_KEY` 必填，并与服务一致；`API_BASE_URL` 默认是 `http://127.0.0.1:8787`，`API_SMOKE_OUTPUT` 默认是 `.preview/api-smoke`，可通过环境变量调整。云端公共模式的配额与机器人调用验证见[图片服务验收](image-api-acceptance-20261012.md)。
 
 ## 接口
 
-下表路径相对于服务 URL。公共入口无需认证；直接调用自建服务时，图片与素材接口要求请求头 `Authorization: Bearer <API_KEY>`。健康检查和统计接口无需此密钥，统计接口的 Origin 校验与请求说明见 [全站统计](statistics.md)。
+下表路径相对于服务 URL。云端公共服务无需密钥；自建服务未开启公共访问时，图片、素材和字体接口要求 `Authorization: Bearer <API_KEY>`。健康检查无需密钥。统计接口的 Origin 校验与请求说明见 [全站统计](statistics.md)。
 
 | 方法与路径 | 返回内容 |
 | --- | --- |
@@ -78,7 +82,8 @@ API_KEY='replace-with-your-key' npm run smoke:api
 查询公共服务的健康状态、素材和字体：
 
 ```sh
-curl --fail --silent --show-error https://eynnzerr.cloud/blue-fish/healthz
+curl --fail --silent --show-error \
+  https://eynnzerr.cloud/blue-fish/healthz
 
 curl --fail --silent --show-error \
   https://eynnzerr.cloud/blue-fish/api/v1/stickers
@@ -101,7 +106,7 @@ curl --fail --silent --show-error \
 
 服务按请求数组的顺序为素材标注 **1 至 8**，并显示完整缩略图、名称及“档案馆”或“工坊”来源。目录采用两列布局，宽度固定为 960 像素；1–2、3–4、5–6、7–8 项分别输出 684、1168、1652、2136 像素高的 PNG。透明素材使用浅色棋盘格衬底。
 
-调用方负责保存编号与底图 ID 的映射；生成表情时仍向 `/api/v1/render` 提交实际 `stickerId`。预览接口与生成接口共用每分钟渲染限流和同时渲染数量上限；自建服务还要求 Bearer 鉴权。
+调用方负责保存编号与底图 ID 的映射；生成表情时仍向 `/api/v1/render` 提交实际 `stickerId`。预览接口与生成接口共用公共/凭证访问规则、每分钟渲染额度和同时渲染数量上限。
 
 ### 生成图片
 
@@ -149,12 +154,13 @@ curl --fail --silent --show-error \
 | HTTP 状态 | 含义 |
 | --- | --- |
 | `400` | JSON 或参数无效，包括未知字段 |
-| `401` | 自建服务缺少或使用了错误的 Bearer 密钥 |
+| `401` | 提供了错误密钥；或自建私有服务缺少密钥 |
 | `404` | 接口或底图不存在 |
 | `413` | 请求正文超过 8 KiB |
 | `415` | 请求正文不是 `application/json` |
-| `429` | 达到公共入口的 IP 频率限制或全服务每分钟渲染频率上限 |
+| `429` | 达到 IP 频率限制、公共渲染额度或总渲染额度上限 |
 | `503` | 达到同时渲染数量上限 |
+| `504` | 渲染子进程超过 20 秒，已终止本次任务 |
 | `500` | 图片加载或渲染失败 |
 
 ## Python / AstrBot 调用
@@ -181,7 +187,7 @@ async def render_sticker(
         return response.content
 ```
 
-[肥鱼工坊 AstrBot 插件](https://github.com/Eynnzerr/astrbot_plugin_blue_fish) 将返回的 PNG 字节发送到聊天中。调用自建服务时，把 `base_url` 和 `api_key` 换成该服务的地址与密钥。
+[肥鱼工坊 AstrBot 插件](https://github.com/Eynnzerr/astrbot_plugin_blue_fish) 将返回的 PNG 字节发送到聊天中。默认公共服务无需配置密钥；接入自建服务或已获单独凭证时，填写对应地址和密钥。
 
 ## 更新服务
 

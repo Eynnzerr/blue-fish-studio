@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { execFile } from "node:child_process";
 import { readFile, realpath } from "node:fs/promises";
 import {
   createServer,
@@ -7,11 +8,9 @@ import {
 } from "node:http";
 import { isAbsolute, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { BUILTIN_FONTS, DEFAULT_SETTINGS } from "../src/lib/defaults.ts";
-import { CANVAS_SIZE, drawSticker } from "../src/lib/render.ts";
 import type { EditorSettings, Sticker } from "../src/types.ts";
-import { renderCatalogPreview } from "./catalog-preview.ts";
+import type { RenderJob } from "./render-worker.ts";
 import { ApiError, integerSetting, readJson, sendError, sendJson } from "./http.ts";
 import { createStatsService } from "./stats-service.ts";
 
@@ -19,6 +18,10 @@ import { createStatsService } from "./stats-service.ts";
 const RATE_WINDOW_MS = 60_000;
 /** Maximum time allowed for open connections to finish during shutdown. */
 const SHUTDOWN_GRACE_MS = 10_000;
+/** Maximum lifetime of a native rendering process. */
+const RENDER_TIMEOUT_MS = 20_000;
+/** Bound the encoded image accumulated by the HTTP process. */
+const MAX_RENDER_OUTPUT_BYTES = 8 * 1024 * 1024;
 /** Stable public font identifiers mapped to the browser's bundled font families. */
 const FONT_FAMILIES = {
   maoken: "Maoken",
@@ -36,13 +39,13 @@ const RENDER_FIELDS = new Set([
   "layout",
 ]);
 
-/** A registered font and its stable API-facing identity. */
+/** A bundled font and its stable API-facing identity. */
 interface ServiceFont {
   /** Stable identifier used in render requests. */
   id: string;
   /** Human-readable font name shared with the editor. */
   name: string;
-  /** Registered native canvas font family. */
+  /** Font family registered by each isolated rendering process. */
   family: string;
 }
 
@@ -54,20 +57,12 @@ interface RenderRequest {
   settings: EditorSettings;
 }
 
-/** Register all four bundled fonts before accepting requests. */
-function registerFonts(publicRoot: string): Map<string, ServiceFont> {
+/** Describe bundled fonts without loading native drawing libraries into HTTP memory. */
+function describeFonts(): Map<string, ServiceFont> {
   const fonts = new Map<string, ServiceFont>();
   for (const [id, family] of Object.entries(FONT_FAMILIES)) {
     const definition = BUILTIN_FONTS.find((font) => font.family === family);
-    if (
-      !definition?.source ||
-      !GlobalFonts.registerFromPath(
-        resolve(publicRoot, definition.source),
-        family,
-      )
-    ) {
-      throw new Error(`Could not register bundled font: ${id}`);
-    }
+    if (!definition?.source) throw new Error(`Missing bundled font: ${id}`);
     fonts.set(id, { id, name: definition.label, family });
   }
   return fonts;
@@ -220,45 +215,68 @@ function validatePreview(
   });
 }
 
-/** Load only catalog thumbnail files and compose their numbered preview in memory. */
-async function renderPreviewPng(
+/** Render one validated job in a short-lived process that releases all native memory on exit. */
+async function renderIsolatedPng(
   publicRoot: string,
-  stickers: Sticker[],
+  input: RenderRequest | Sticker[],
 ): Promise<Buffer> {
-  const items = [];
-  // Decode sequentially so one preview request does not start eight file decoders at once.
-  for (const sticker of stickers) {
-    const path = await realpath(catalogPath(publicRoot, sticker.preview));
+  let job: RenderJob;
+  if (Array.isArray(input)) {
+    const items = [];
+    for (const sticker of input) {
+      const path = await realpath(catalogPath(publicRoot, sticker.preview));
+      if (!path.startsWith(`${publicRoot}${sep}`))
+        throw new Error("Image path escapes the public directory");
+      items.push({ sticker, imagePath: path });
+    }
+    job = { kind: "preview", publicRoot, items };
+  } else {
+    const path = await realpath(catalogPath(publicRoot, input.sticker.src));
     if (!path.startsWith(`${publicRoot}${sep}`))
       throw new Error("Image path escapes the public directory");
-    items.push({ sticker, image: await loadImage(path) });
+    job = { kind: "render", publicRoot, imagePath: path, settings: input.settings };
   }
-  return renderCatalogPreview(items);
+  return new Promise((resolvePng, rejectPng) => {
+    let inputError: Error | undefined;
+    const child = execFile(
+      process.execPath,
+      [
+        "--experimental-strip-types",
+        "--max-old-space-size=96",
+        fileURLToPath(new URL("./render-worker.ts", import.meta.url)),
+      ],
+      {
+        encoding: "buffer",
+        timeout: RENDER_TIMEOUT_MS,
+        killSignal: "SIGKILL",
+        maxBuffer: MAX_RENDER_OUTPUT_BYTES,
+      },
+      (error, stdout, stderr) => {
+        if (inputError) {
+          rejectPng(inputError);
+          return;
+        }
+        if (error) {
+          rejectPng(
+            error.killed
+              ? new ApiError(504, "RENDER_TIMEOUT", "图片生成超时，请稍后重试")
+              : new Error(stderr.toString().trim() || error.message),
+          );
+          return;
+        }
+        resolvePng(stdout);
+      },
+    );
+    child.stdin!.on("error", (error: Error) => {
+      // Return the concurrency slot only after execFile confirms the child has closed.
+      inputError = error;
+      child.kill("SIGKILL");
+    });
+    child.stdin!.end(JSON.stringify(job));
+  });
 }
 
-/** Decode one bundled image and render a 1024-square PNG entirely in memory. */
-async function renderPng(
-  publicRoot: string,
-  input: RenderRequest,
-): Promise<Buffer> {
-  const path = await realpath(catalogPath(publicRoot, input.sticker.src));
-  if (!path.startsWith(`${publicRoot}${sep}`))
-    throw new Error("Image path escapes the public directory");
-  const image = await loadImage(path);
-  const scale = 2;
-  const canvas = createCanvas(CANVAS_SIZE * scale, CANVAS_SIZE * scale);
-  drawSticker(
-    canvas.getContext("2d"),
-    image,
-    image.width,
-    image.height,
-    input.settings,
-    scale,
-  );
-  return canvas.encode("png");
-}
-
-/** Initialize assets and serve the authenticated image API. */
+/** Initialize assets and serve private or explicitly enabled public image requests. */
 async function main(): Promise<void> {
   const apiKey = process.env.API_KEY?.trim();
   if (!apiKey)
@@ -267,15 +285,25 @@ async function main(): Promise<void> {
   const port = integerSetting("PORT", 8787, 65_535);
   const maxConcurrent = integerSetting("MAX_CONCURRENT_RENDERS", 2);
   const rateLimit = integerSetting("RATE_LIMIT_PER_MINUTE", 60);
+  /** Permit requests without credentials only when the deployment explicitly enables them. */
+  const allowAnonymous = process.env.ALLOW_ANONYMOUS_RENDER === "true";
+  /** Public requests share the overall cap while leaving its remaining quota for valid credentials. */
+  const publicRateLimit = integerSetting(
+    "PUBLIC_RATE_LIMIT_PER_MINUTE",
+    rateLimit,
+    rateLimit,
+  );
   const publicRoot = await realpath(
     fileURLToPath(new URL("../public/", import.meta.url)),
   );
-  const fonts = registerFonts(publicRoot);
+  const fonts = describeFonts();
   const catalog = await loadCatalog(publicRoot);
   const statsService = createStatsService();
   const expectedAuthorization = Buffer.from(`Bearer ${apiKey}`);
   let activeRenders = 0;
   let rendersInWindow = 0;
+  /** Count anonymous renders within the same window as the overall quota. */
+  let publicRendersInWindow = 0;
   let windowStartedAt = Date.now();
   let closing = false;
 
@@ -297,9 +325,12 @@ async function main(): Promise<void> {
     if (closing) throw new ApiError(503, "SHUTTING_DOWN", "服务正在关闭");
     if (await statsService.handle(request, response, path)) return;
     const authorization = Buffer.from(request.headers.authorization ?? "");
+    // Determine the quota from actual credentials, never from caller-supplied identity hints.
+    const isPublicRequest = allowAnonymous && authorization.length === 0;
     if (
-      authorization.length !== expectedAuthorization.length ||
-      !timingSafeEqual(authorization, expectedAuthorization)
+      !isPublicRequest &&
+      (authorization.length !== expectedAuthorization.length ||
+        !timingSafeEqual(authorization, expectedAuthorization))
     ) {
       throw new ApiError(401, "UNAUTHORIZED", "需要有效的 Bearer API Key");
     }
@@ -340,24 +371,28 @@ async function main(): Promise<void> {
     if (now - windowStartedAt >= RATE_WINDOW_MS) {
       windowStartedAt = now;
       rendersInWindow = 0;
+      publicRendersInWindow = 0;
     }
-    if (rendersInWindow >= rateLimit) {
+    if (
+      rendersInWindow >= rateLimit ||
+      (isPublicRequest && publicRendersInWindow >= publicRateLimit)
+    ) {
       response.setHeader(
         "Retry-After",
         String(Math.ceil((windowStartedAt + RATE_WINDOW_MS - now) / 1000)),
       );
-      throw new ApiError(429, "RATE_LIMITED", "渲染请求过于频繁，请稍后重试");
+      throw new ApiError(429, "RATE_LIMITED", "图片生成请求较多，请稍后重试");
     }
     if (activeRenders >= maxConcurrent) {
+      response.setHeader("Retry-After", "2");
       throw new ApiError(503, "RENDER_BUSY", "当前渲染任务已满，请稍后重试");
     }
     // Reserve both limits before awaiting decoding; rejected requests do not consume the render quota.
     rendersInWindow += 1;
+    if (isPublicRequest) publicRendersInWindow += 1;
     activeRenders += 1;
     try {
-      const png = Array.isArray(input)
-        ? await renderPreviewPng(publicRoot, input)
-        : await renderPng(publicRoot, input);
+      const png = await renderIsolatedPng(publicRoot, input);
       if (!response.destroyed) {
         response.writeHead(200, {
           "Content-Type": "image/png",
