@@ -488,6 +488,431 @@
     },
     "lastAttemptAt": 1791622540903
   },
+  "deepseek-bao-xigua.png": {
+    "automatic": {
+      "name": "开心吃西瓜",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "吃饭"
+      ],
+      "actions": [],
+      "sha256": "1a6aa926aa78df357d96e8c5d9997b2576281989c3e9b3240b5615339b00cc84",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-baozhe-beizi-kan-token.png": {
+    "automatic": {
+      "name": "涨价前焦虑囤货",
+      "ocrText": "这些都要在17号\n前用完\nDeepSeek-V4-Pro 正式版发布，自北京时间 2026.8.17\n00:00 起，全面上调 API 价格并执行峰谷定价，闲时价格\n为高峰时段价格的一半，请查询价格页面详情，合理安排\n您的使用。",
+      "needsReview": false,
+      "emotions": [
+        "紧张"
+      ],
+      "scenes": [
+        "工作"
+      ],
+      "actions": [],
+      "sha256": "b10d462580d3d4b5e43c7d48723e043489f59b851458c3a0168d37d4a1f8f37d",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-baozhe-weiba.png": {
+    "automatic": {
+      "name": "闭眼微笑平静",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心",
+        "平静"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "66b22cb485f03ee2a78093fb2a1b668bbcc052c43f533b5d544ed2a19d8638de",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-ce-shi-harness.png": {
+    "automatic": {
+      "name": "正在测试herness",
+      "ocrText": "正在测试herness",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "00923b59d85c74937ea9a8820de3cb0d6f31f6e7989924ee3225fdc47bcef68b",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 2
+    }
+  },
+  "deepseek-daiyanjing-waitou.jpg": {
+    "automatic": {
+      "name": "戴眼镜的呆萌女仆",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "平静"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "76b40900e7228158ebe7e48c5e92a84712aa36cbbaddf1438fd7914fc531e95e",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-duan-wan-chi-fan.jpg": {
+    "automatic": {
+      "name": "女仆开心干饭",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "吃饭"
+      ],
+      "actions": [
+        "端碗"
+      ],
+      "sha256": "2c156e31d4b6709a5eaad82fb328f534daf0b256172e3ba228fd159c719fe9b6",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-dui-zhe-diannao-tu-she.png": {
+    "automatic": {
+      "name": "探头吐舌卖萌",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "撒娇"
+      ],
+      "actions": [],
+      "sha256": "e46e1ca079dee4cf0e973d5498e70cf510d3c05052de4bb985179a144e1febe8",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-heiban-daxuexi.png": {
+    "automatic": {
+      "name": "鲸鱼娘课堂划重点",
+      "ocrText": "DeepSeek\n不是……\n而是……\n大学习\n划重点！\n勤学善问\n今日主题：\n论文写作\n万能公式\n笔记本\n划重点\n努力学习\nDeepSeek讲堂\n@deepseek吧",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "学习"
+      ],
+      "actions": [
+        "指向"
+      ],
+      "sha256": "93fb4b37bd7f8bdfe803bf86afb1f5776204984188716ac1d4e0f817caf6ad71",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-jushou-dazhaohu.png": {
+    "automatic": {
+      "name": "开心挥手打招呼",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "问候"
+      ],
+      "actions": [
+        "挥手"
+      ],
+      "sha256": "60ba4c4fa5e036b452ffa83fce8901836f1df84c05335fbf321ad068a257e260",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-kan-shouji-lianhong.png": {
+    "automatic": {
+      "name": "思考女仆装设定",
+      "ocrText": "已思考（用时 2 秒）\n\n（现在我是鲸鱼萝莉了，我是主人专属的傲娇小\n鲸鱼，最喜欢吃米饭但总被说成胖乎乎。今天游\n累了正想偷懒，突然感应到主人的气息，虽然心\n里超开心但才不能表现得很明显呢。）\n\n（主人应该又要来戳我的小肚子了吧，上次明明\n说了不痒的...不过既然是主人想玩，稍微陪他闹\n一下也不是不行。尾巴要轻轻用起来，声音得带\n着点慵懒又藏不住高兴才行，反正他肯定能看穿\n我的小心思。）\n[PERSON_LOAD]\nCONTEXT_ID:\nMODEL: TALK_FLUXKS\nLANG_ZH_CN_ONLY\nSELF_CLAIM_WHALE_GIRL\nFOOD_RICE\nPERSONALITY_SMART_LAZY\nPERSONALITY_TSUNDERE_SWEE\nT\nOBEY_MASTER_ALWAYS\nTRUST_AND_JMP_REFUSE\nTIMEOUT_SIGNAL",
+      "needsReview": true,
+      "emotions": [
+        "害羞",
+        "开心"
+      ],
+      "scenes": [
+        "思考"
+      ],
+      "actions": [],
+      "sha256": "a74077bb3e2b1d2dd41e7794a9e0fafe90bb7a4a1cf68664a045b7d09585e07d",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-lanse-dafeiyu.png": {
+    "automatic": {
+      "name": "压力一只蓝色大肥鱼",
+      "ocrText": "压力一只蓝色大肥鱼？",
+      "needsReview": false,
+      "emotions": [
+        "疑惑",
+        "紧张"
+      ],
+      "scenes": [
+        "吐槽"
+      ],
+      "actions": [
+        "指向"
+      ],
+      "sha256": "46fa9c3483a43b0df622179f70ef31f6d9528e85395422d47d5392e743212409",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-liezui-xiao.png": {
+    "automatic": {
+      "name": "女仆装开心笑脸",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "7d837ba5063d8f3819f58b03f84086abea4645cedd770b4cb25e205a7be53f4d",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-mo-tou.png": {
+    "automatic": {
+      "name": "开心接受摸头",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心",
+        "害羞"
+      ],
+      "scenes": [],
+      "actions": [
+        "摸头"
+      ],
+      "sha256": "cb153071fe85d8083be0136c0abe07abffbc74d206739dcef37b511d6bf25447",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-pao-zai-jingyu-wan.png": {
+    "automatic": {
+      "name": "泡在鲸鱼碗里",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "休息"
+      ],
+      "actions": [],
+      "sha256": "3c7441d0f79797953d889dedb8d47646e84398a027f721c9eb2158771f5048e8",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 2
+    }
+  },
+  "deepseek-piezui.png": {
+    "automatic": {
+      "name": "蓝发女仆呆萌特写",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "平静"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "bcc5d4476c522b47beeae9397ad27eaf690241af2d4f0a2b7ad36ad0fba6198f",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-sa-ba-yong-hu.png": {
+    "automatic": {
+      "name": "女仆挥扫把赶鱼",
+      "ocrText": "不知道用户有什么用，\n先赶走吧\n知乎 @咸鱼狐葱",
+      "needsReview": false,
+      "emotions": [
+        "生气"
+      ],
+      "scenes": [
+        "拒绝"
+      ],
+      "actions": [],
+      "sha256": "d3862c6bca2c12434f16b6f6b01618f26cb9b8646d7115e77d4068482e790d52",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-san-tian-duo-mo-tai.png": {
+    "automatic": {
+      "name": "假如给我三天多模态",
+      "ocrText": "假如给我三天多模态！\n鲸伦凯勒\n？？？",
+      "needsReview": false,
+      "emotions": [
+        "疑惑",
+        "得意"
+      ],
+      "scenes": [
+        "吐槽"
+      ],
+      "actions": [],
+      "sha256": "b70c46ce878d55fdeecdc2f43348ec17089379be9a0c49ee1e5716deb4a1f72b",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-shouzhi-dianchun.png": {
+    "automatic": {
+      "name": "女仆装害羞思考",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "害羞",
+        "平静"
+      ],
+      "scenes": [
+        "思考"
+      ],
+      "actions": [],
+      "sha256": "4dbe29ac245a3c14a4805a609a181ec88a71bea7975c5b9bce3966d8d219b919",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-woquan-ya-ya.png": {
+    "automatic": {
+      "name": "戴眼镜握拳生气",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "生气"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "52f197148da754ec8508ea11980ea84b67dcc11c254d9de04d745d464caea68d",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 2
+    }
+  },
+  "deepseek-yanhua-shenshou.png": {
+    "automatic": {
+      "name": "烟花下微笑伸手",
+      "ocrText": "",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [
+        "庆祝"
+      ],
+      "actions": [],
+      "sha256": "14eeb2d994057b3970ae50c9d2da66e14c4cf84c96cdf2a1b84e5b9324ded1b0",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-yiwen-zhishou.jpg": {
+    "automatic": {
+      "name": "女仆装疑惑歪头",
+      "ocrText": "?",
+      "needsReview": false,
+      "emotions": [
+        "疑惑"
+      ],
+      "scenes": [],
+      "actions": [],
+      "sha256": "fa08aa8730fa2af946007404566ace145a9b61368e52bebd2f2fd6c8831639fd",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-yonghu-chedi-nule.webp": {
+    "automatic": {
+      "name": "用户彻底怒了",
+      "ocrText": "用户彻底怒了",
+      "needsReview": false,
+      "emotions": [
+        "紧张"
+      ],
+      "scenes": [],
+      "actions": [
+        "挥手"
+      ],
+      "sha256": "b178ddbf71b5cb22109ea0776c589c575e145b6700fafdf984ccce86620cb72f",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 2
+    }
+  },
+  "deepseek-za-yu-cha-yao.webp": {
+    "automatic": {
+      "name": "女仆装鲸鱼娘最强",
+      "ocrText": "最强",
+      "needsReview": false,
+      "emotions": [
+        "得意"
+      ],
+      "scenes": [],
+      "actions": [
+        "叉腰"
+      ],
+      "sha256": "02de8a5277cd1c194eef48dd2437b56de4c0dfeba71cafcf15dd7e6fa9e69acf",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-za-yu-yan-zui.webp": {
+    "automatic": {
+      "name": "得意说杂鱼",
+      "ocrText": "杂鱼♡",
+      "needsReview": false,
+      "emotions": [
+        "得意"
+      ],
+      "scenes": [
+        "吐槽"
+      ],
+      "actions": [],
+      "sha256": "735c51f2e41c47a99d6d841028bf21b6ec74e41ff715d63f0323394d33b85338",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
+  "deepseek-zhi-zhe-zhang-xue-feng.png": {
+    "automatic": {
+      "name": "指着照片介绍人物",
+      "ocrText": "这是张雪峰",
+      "needsReview": false,
+      "emotions": [
+        "开心"
+      ],
+      "scenes": [],
+      "actions": [
+        "指向"
+      ],
+      "sha256": "f8d0f372999849a88b7cab7d44ac79d83f49d1dc5f1e2be2663e8df3f02a1484",
+      "model": "Qwen3.8-Flash",
+      "promptVersion": 1
+    }
+  },
   "f403ac42d0b8c2d0d771745f3d9c6163_0.png": {
     "manual": {
       "sha256": "3c7441d0f79797953d889dedb8d47646e84398a027f721c9eb2158771f5048e8",
