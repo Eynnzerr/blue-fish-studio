@@ -82,7 +82,7 @@ API Key 仅保存在当前页面内存中，刷新即清除。浏览器将提示
 
 也可将表情合成作为 HTTP 服务运行：提交底图 ID、文案和样式，直接获取 PNG，供 AstrBot 等程序调用。启动、Docker 部署与请求示例见 [接口文档](docs/api.md)。
 
-配套的 [肥鱼工坊 AstrBot 插件](https://github.com/Eynnzerr/astrbot_plugin_blue_fish) 将制图能力接入 QQ 聊天：查询底图和字体后，通过 `/肥鱼` 命令填写文案、选择样式，插件调用工坊 API 并回复生成的 PNG 图片。
+配套的 [肥鱼工坊 AstrBot 插件](https://github.com/Eynnzerr/astrbot_plugin_blue_fish) 将制图能力接入 QQ 聊天：正常回复后按可配置概率选择已有底图、原创短文案并自动发图，默认概率为 10%；也可查询底图和字体，通过 `/肥鱼` 命令填写文案、选择样式。选图、配文和发送由插件完成，工坊 API 负责渲染 PNG。配置方法见[插件说明](https://github.com/Eynnzerr/astrbot_plugin_blue_fish#回复后概率配图)。
 
 ## 构建与部署
 
